@@ -1,0 +1,13 @@
+{
+    "question": "",
+    "expected_answer": "",
+    "model_answer": "",
+    "pass_fail": "",
+    "failure_type":
+    {
+        "wrong fact": "",
+        "hallucination": "",
+        "incomplete": "",
+        "style": ""
+    } 
+}

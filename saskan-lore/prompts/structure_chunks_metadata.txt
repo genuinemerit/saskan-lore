@@ -1,0 +1,1 @@
+Convert this chunk into structured metadata using the schema.
