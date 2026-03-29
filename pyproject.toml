@@ -1,0 +1,119 @@
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "saskan-lore"
+version = "0.1.0"
+description = "Saskan Lands Lore Assistant."
+license = "MIT"
+authors = ["Genuine Merit Software <genuinemerit@pm.me>"]
+readme = "README.md"
+keywords = ["game", "saskantinon", "Saskan Lands", "saskan", "rpg"]
+
+# Single top-level package
+# Poetry will auto-discover packages with __init__.py.
+packages = [{ include = "saskan-lore" }]
+
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Games/Entertainment :: Role-Playing",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+# Ship common meta/docs if you publish; harmless for apps
+include = [
+  "AUTHORS.md",
+  "CHANGELOG.md",
+  "CODE_OF_CONDUCT.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "README.md",
+  "RELEASE.md",
+  "LICENSE",
+  "docs/**/*",
+  "saskan-lore/data/**/*"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+
+# Core runtime (lean; add more as they become truly required at runtime)
+beautifulsoup4 = "^4.12"
+Levenshtein = "^0.25"
+numpy = "^2.0"
+openai = "^1.0"
+pendulum = "^3.0"
+requests = "^2.32"
+rich = "^13.7"
+SQLAlchemy = "^2.0"
+tabulate = "^0.9"
+tzlocal = "^5.2"
+
+# Heavy/optional at runtime → kept as extras
+matplotlib = { version = "^3.9", optional = true }
+nltk = { version = "^3.9", optional = true }
+pandas = { version = "^2.2", optional = true }
+
+# Databases
+# Default: stdlib sqlite3 via SQLAlchemy (no extra driver needed)
+# Optional Postgres support (sync)
+psycopg = { version = "^3.2", optional = true }
+typer = {extras = ["all"], version = "^0.16.1"}
+jsonschema = "^4.25.1"
+pyyaml = "^6.0.2"
+types-pyyaml = "^6.0.12.20250822"
+twisted = "^25.5.0"
+psutil = "^7.0.0"
+pillow = "^11.3.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.8"
+isort = "^5.13"
+pytest = "^8.3"
+coverage = "^7.6"
+mypy = "^1.11"  # optional, but good to have
+pre-commit = "^4.3.0"
+import-linter = "^2.4"
+
+[tool.poetry.extras]
+analytics = ["matplotlib", "pandas", "nltk"]
+gui = ["pygame"]
+postgres = ["psycopg"]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/genuinemerit/saskan-lore/issues"
+"Documentation" = "https://github.com/genuinemerit/saskan-wiki/wiki"
+"Source Code" = "https://github.com/genuinemerit/saskan-lore"
+
+# -------------------------
+# Tooling configuration
+# -------------------------
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["saskan"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["saskan-lore"]
+ignore_missing_imports = true
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true

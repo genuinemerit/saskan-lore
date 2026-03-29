@@ -1,8 +1,0 @@
-Extract structured metadata from the text below.
-Only include information explicitly stated or strongly implied.
-Do not invent details.
-Include short source spans (quotes) for each claim.
-Give me 3–5 factual claims from this passage with quotes.
-List any statements in this passage that could contradict other known sources.
-Do NOT invent, extend, or improve the lore.
-If information is missing or unclear, leave it empty or mark as unknown.
