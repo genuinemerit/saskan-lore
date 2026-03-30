@@ -50,6 +50,18 @@ Example: `qwen2.5-3b-instruct-q4_k_m.gguf`
 
 ---
 
+## LLM (Large Language Model)
+
+A type of AI model trained on large amounts of text. Given a text input (a *prompt*), it
+generates a text response. LLMs do not look up facts — they predict plausible output based
+on patterns learned during training. This makes them useful for tasks like extracting
+structured data from prose, but it also means their output can contain errors.
+
+In this project, an LLM reads lore text chunks and identifies claims, entities, and
+relationships. All output is treated as untrusted until a human reviews it.
+
+---
+
 ## Llama 3
 
 An open-weight language model family released by Meta, available in 1B, 3B, 8B, and larger sizes. GGUF-format versions suitable for local llama.cpp inference are available via Hugging Face.
@@ -96,6 +108,35 @@ A claim is testable if a specific question can be written against it with a veri
 | --- | --- |
 | Not testable | "The Covenant was important." |
 | Testable | "The Covenant of Varkaar governed oath law in the northern provinces during the Ashen Era." |
+
+---
+
+## Poetry (Virtual Environment)
+
+[Poetry](https://python-poetry.org/) manages dependencies and the virtual environment for this
+project. All commands assume Python 3.12.
+
+**Activate the environment:**
+
+```bash
+source saskan-lore/tools/poetry_activate
+```
+
+Run this from the repo root. The script wraps `poetry env activate` so you do not need to
+copy-paste the `eval` form each time. Use `deactivate` to exit.
+
+**Common commands** (run outside an activated environment):
+
+```bash
+poetry install                           # install deps and create venv
+poetry add <package>                     # add a dependency
+poetry run <command>                     # run a command without activating
+poetry lock --no-update && poetry install  # resync lock file and venv
+poetry env list                          # list known environments
+poetry env remove python                 # remove the current env (then reinstall)
+```
+
+Applications should commit `poetry.lock`. See `docs/design/workflows.md` for a quick reference.
 
 ---
 

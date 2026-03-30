@@ -31,7 +31,7 @@ These are instructions to the development team, not git pull requests in the str
 | Workflows | `docs/design/workflows.md` |
 | Glossary | `docs/design/reference.md` |
 | Schemas | `saskan-lore/data/schema/` |
-| Prompts | `saskan-lore/prompts/` |
+| Prompts | `saskan-lore/analyzer/` |
 
 ---
 

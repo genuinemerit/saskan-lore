@@ -20,12 +20,12 @@ All completed:
 - ADR-001 through ADR-007
 - FR-001 through FR-008
 - NFR-001 through NFR-005
-- JSON schemas: `extract_schema.json`, `testing_schema.json`, `source_span.json`
 - Database design sketch: `data/schema/database_schema.py`
-- Prompt templates: `prompts/extract_claims.txt`, `prompts/structure_chunks_metadata.txt`,
-  `prompts/structure_claims_metadata.txt`
+- Prompt templates: `analyzer/extract_claims.txt`, `analyzer/structure_claims_metadata.txt`
 - `analyzer/chunker.py` — sentence-aware, reproducible text chunker
-- Utility stubs: `tools/utils/platform.py`, `tools/utils/stamps.py`
+- `analyzer/extractor.py` — OpenAI gpt-4o extraction; `extract_claims()` and `structure_claims()`
+- Utility stubs: `tools/utils/platform.py`, `tools/utils/stamps.py`, `tools/utils/file_io.py`,
+  `tools/utils/shell.py`, `tools/utils/match_semver.py`
 
 ---
 
@@ -49,4 +49,4 @@ All completed:
 The database design sketch in `data/schema/database_schema.py` is a reference document,
 not runnable code. It is superseded by the SQLAlchemy models built in R1.
 
-`chunker.py` is complete and tested. It is wired to the database in R2.
+`chunker.py` is complete. It is wired to the database in R2.

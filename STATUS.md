@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-03-29
+Last updated: 2026-03-30
 
 ---
 
@@ -33,9 +33,11 @@ The foundation is solid. Every decision documented, every constraint named.
 - ADRs 001–007 — seven clean decisions, no ambiguity
 - Functional requirements FR-001–008
 - Non-functional requirements NFR-001–005
-- Schemas: extract, testing, source span, database design sketch
-- Extraction prompts: claims, chunk metadata, claims metadata
-- `chunker.py` — sentence-aware, reproducible, tested
+- Database design sketch: `data/schema/database_schema.py`
+- Extraction prompts: `analyzer/extract_claims.txt`, `analyzer/structure_claims_metadata.txt`
+- `analyzer/chunker.py` — sentence-aware, reproducible text chunker
+- `analyzer/extractor.py` — OpenAI gpt-4o claim extraction and structuring
+- Utility modules: `platform.py`, `stamps.py`, `file_io.py`, `shell.py`, `match_semver.py`
 
 The structure is ready. The decisions are made. The chord progression is in place.
 

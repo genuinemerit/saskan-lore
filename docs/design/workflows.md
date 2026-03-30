@@ -69,21 +69,3 @@ Record state per artifact:
 | **Acceptance** | answer includes supporting evidence; pass/fail recorded; notes allow failure analysis |
 
 **Retrieval approach (MVP):** keyword search, or embedding + cosine similarity in Python. Return top 3 chunks with associated claims. No vector DB.
-
----
-
-## Poetry Quick Reference
-
-```bash
-poetry install              # install deps, create venv
-poetry run <command>        # run without activating venv
-eval "$(poetry env activate)"  # activate venv
-deactivate                  # deactivate venv
-poetry env list             # list known environments
-poetry env remove python    # remove current env (then reinstall)
-poetry lock --no-update && poetry install  # resync lock and venv
-```
-
-- Run `poetry install/add/update` **outside** an activated venv.
-- Applications should commit `poetry.lock`.
-- See `Makefile` for common command aliases.

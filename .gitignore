@@ -44,7 +44,7 @@ nosetests.xml
 log/
 debug/
 *.log
-!saskan/infra/log
+!saskan-lore/infra/log/
 
 # --- Environments ---
 # Ignore real environment config/secrets
@@ -79,8 +79,19 @@ site/
 
 # --- Databases ---
 # SQLite local dev DB files should not be versioned.
-db.sqlite3
-db.sqlite3-journal
+# Covers all common SQLite extensions and WAL/journal/shm sidecars.
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+*.db-wal
+*.sqlite-wal
+*.sqlite3-wal
+*.db-shm
+*.sqlite-shm
+*.sqlite3-shm
 
 # --- Postgres (local Docker volumes / scratch data) ---
 # Ignore common local volume dirs you might map in docker-compose.
@@ -98,6 +109,10 @@ dumps/
 # --- System cruft ---
 .DS_Store
 Thumbs.db
+
+# --- Runtime output dirs (generated at runtime, not versioned) ---
+/logs/
+/data/reviewed/
 
 # --- Project-specific scratch areas ---
 # Dont' put any assets into the repo
