@@ -5,6 +5,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.2.0] - 2026-03-30 — R2 Ingestion Pipeline
+
+### Added
+
+- `saskan_lore/loader/register_lore_text.py` — `register_document()`: registers a lore
+  source PDF in the database with scope guard, SHA-256 content hash, and dual idempotence
+  check (source_path or content_hash)
+- `saskan_lore/loader/load_chunks.py` — `load_chunks()`: splits plain text into chunks and
+  persists them; count-based idempotence guard handles partial-failure recovery
+- `saskan_lore/loader/ingest.py` — `saskan-lore ingest` Typer CLI command: PDF text
+  extraction (pdfminer.six), whitespace normalisation, registration, chunking, and
+  structured logging; clean error messages and non-zero exit on failure
+- `pdfminer-six` runtime dependency added
+- `[tool.poetry.scripts]` entry in `pyproject.toml`: `saskan-lore` CLI wired to
+  `saskan_lore.loader.ingest:app`
+- `docs/design/pull_requests/r2_ingestion/test_cases.md` — R2 test case register
+- `docs/guides/user.md` — new user guide documenting public function call patterns
+- `docs/design/reference.md` — Typer and pdfminer.six entries added
+
+### Changed
+
+- `docs/design/pull_requests/r2_ingestion/design.md` — finalised design decisions:
+  pdfminer.six chosen, content_hash dual-check, range-selection rationale, CLI notes
+- `.markdownlint.json` — MD013 line_length set to 100 (matching Python and editorconfig)
+
+### Removed
+
+- `saskan_lore/loader/load_metadata.py` — early stub replaced by the above modules
+
+### Tests
+
+- `tests/unit/r2_ingestion/test_r2_ingestion.py` — 10 unit tests; all passing
+  (TC-R2-01 through TC-R2-10)
+- Full suite: 20/20 passing
+
+---
+
 ## [0.1.3] - 2026-03-30
 
 ### Changed
