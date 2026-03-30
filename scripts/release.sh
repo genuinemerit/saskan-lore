@@ -89,10 +89,15 @@ sed -i "s/^version = \".*\"/version = \"${NEW_BARE}\"/" pyproject.toml
 echo "Updated pyproject.toml to version $NEW_BARE."
 
 # --------------------------------------------------------------------------
-# Commit version bump (pre-commit hooks run here — safe on .toml files)
+# Commit version bump if pyproject.toml actually changed
+# (pre-commit hooks run here — safe on .toml files)
 # --------------------------------------------------------------------------
 git add pyproject.toml
-git commit -m "chore: bump version to $NEW"
+if ! git diff --cached --quiet; then
+    git commit -m "chore: bump version to $NEW"
+else
+    echo "pyproject.toml already at $NEW_BARE — skipping version bump commit."
+fi
 
 # --------------------------------------------------------------------------
 # Annotated tag
