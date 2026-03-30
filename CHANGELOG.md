@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Repo structure and Python package scaffolding (`saskan-lore/saskan-lore/`)
+- Repo structure and Python package scaffolding (`saskan-lore/saskan_lore/`)
 - `pyproject.toml` — Poetry, Python 3.12, all dependencies declared
 - Design docs: `workflows.md`, `reference.md`
 - ADR-001 through ADR-007 — architecture decisions

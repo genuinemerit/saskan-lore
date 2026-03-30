@@ -1,4 +1,5 @@
-# saskan-lore/tools/utils/platform.py
+# saskan_lore/tools/utils/platform.py
+"""System platform information."""
 
 import json
 import logging

@@ -44,7 +44,7 @@ nosetests.xml
 log/
 debug/
 *.log
-!saskan-lore/infra/log/
+!saskan_lore/infra/log/
 
 # --- Environments ---
 # Ignore real environment config/secrets
@@ -54,6 +54,11 @@ debug/
 
 # Keep the example template committed
 !.env.example
+
+# Project env files (env.local, env.test, env.prod) — never commit
+saskan_lore/infra/config/env.local
+saskan_lore/infra/config/env.test
+saskan_lore/infra/config/env.prod
 
 .venv
 venv/
@@ -113,6 +118,11 @@ Thumbs.db
 # --- Runtime output dirs (generated at runtime, not versioned) ---
 /logs/
 /data/reviewed/
+
+# --- Alembic ---
+# Migration scripts in alembic/versions/ ARE committed — do not ignore them.
+# Only ignore compiled bytecode inside the alembic tree.
+alembic/versions/__pycache__/
 
 # --- Project-specific scratch areas ---
 # Dont' put any assets into the repo

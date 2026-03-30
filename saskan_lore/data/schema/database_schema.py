@@ -2,7 +2,7 @@
 """
 database_schema.py
 
-Canonical schema definitions for the saskan-lore database, plus staging
+Canonical schema definitions for the saskan_lore database, plus staging
 dataclasses for LLM extraction output.
 
 Each class is a frozen dataclass. DB table classes serve as the authoritative
@@ -27,7 +27,6 @@ Staging (LLM extraction output, not DB tables):
 
 See: ADR-002 (SQLite + SQLAlchemy), ADR-003 (claims as first-class),
      ADR-004 (truth-status), ADR-005 (relationships), FR-001 through FR-008.
-Source schemas: extract_schema.json, testing_schema.json, source_span.json.
 """
 
 from __future__ import annotations
@@ -49,8 +48,11 @@ class DocumentRecord:
     source_path: str        # path under data/lore_texts/
     scope: str              # lore domain, e.g. "varkaar"
     content_hash: str       # SHA-256 of source text; used for idempotence
-    region: str | None = field(default=None)        # primary geographic region of the document
+    region: str | None = field(default=None)
     ingested_at: datetime | None = field(default=None)
+    is_active: bool = field(default=True)
+    created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -77,7 +79,9 @@ class ChunkRecord:
     canon_level: str | None = field(default=None)
     char_start: int | None = field(default=None)  # character offset in source
     char_end: int | None = field(default=None)    # character offset in source
+    is_active: bool = field(default=True)
     created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -94,7 +98,9 @@ class EntityRecord:
     id: int
     canonical_name: str
     entity_type: str        # person | place | faction | artifact | era | event | other
+    is_active: bool = field(default=True)
     created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -110,6 +116,9 @@ class EntityAliasRecord:
     id: int
     entity_id: int          # FK -> EntityRecord.id
     alias: str
+    is_active: bool = field(default=True)
+    created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -117,11 +126,14 @@ class ClaimRecord:
     """
     A discrete, source-quoted factual claim extracted from a ChunkRecord.
 
-    Claims are the primary unit of retrieval and evaluation.
-    Only claims with reviewed=True are eligible for retrieval.
+    Claims are the primary unit of retrieval and evaluation. Only claims
+    with status='approved' are eligible for retrieval.
 
     truth_status values: fact | belief | interpretation | rumor
     status values:       pending | approved | rejected
+
+    Records are never deleted. Rejected claims remain in the DB with
+    status='rejected' to preserve the review audit trail.
 
     See: FR-004, ADR-003, ADR-004, NFR-003, NFR-004.
     """
@@ -132,10 +144,11 @@ class ClaimRecord:
     claim_text: str         # the extracted statement in clean prose
     source_span: str        # verbatim quote from source supporting this claim
     truth_status: str       # fact | belief | interpretation | rumor
-    reviewed: bool          # True only after human review
     status: str             # pending | approved | rejected
     confidence: str | None = field(default=None)    # extraction confidence: high | medium | low
+    is_active: bool = field(default=True)
     created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -143,12 +156,19 @@ class ClaimEntityRecord:
     """
     Junction table linking claims to the entities they mention.
 
+    role captures the entity's semantic function in the claim,
+    e.g. "subject", "object", "location", "faction".
+
     See: FR-004.
     """
 
+    id: int
     claim_id: int           # FK -> ClaimRecord.id
     entity_id: int          # FK -> EntityRecord.id
-    role: str | None = field(default=None)  # optional semantic role, e.g. "subject"
+    role: str | None = field(default=None)
+    is_active: bool = field(default=True)
+    created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -169,7 +189,9 @@ class RelationshipRecord:
     target_entity_id: int   # FK -> EntityRecord.id
     relationship_type: str  # e.g. "governs", "allied_with", "opposed_to", "member_of"
     claim_id: int | None = field(default=None)  # FK -> ClaimRecord.id (supporting evidence)
+    is_active: bool = field(default=True)
     created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -186,7 +208,9 @@ class EvalQuestionRecord:
     question_text: str
     expected_answer: str
     scope: str              # lore domain, e.g. "varkaar"
+    is_active: bool = field(default=True)
     created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -198,7 +222,7 @@ class EvalResultRecord:
 
     failure_type values: wrong_fact | hallucination | incomplete | style
 
-    See: FR-008, data/schema/testing_schema.json.
+    See: FR-008.
     """
 
     id: int
@@ -210,6 +234,9 @@ class EvalResultRecord:
     failure_type: str | None = field(default=None)
     notes: str | None = field(default=None)
     run_at: datetime | None = field(default=None)
+    is_active: bool = field(default=True)
+    created_at: datetime | None = field(default=None)
+    updated_at: datetime | None = field(default=None)
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +251,6 @@ class ExtractionClaimRecord:
     """
     A single claim within an ExtractionRecord.
 
-    Represents the per-claim structure from extract_schema.json.
     Maps to ClaimRecord on DB load; field names are aligned for that purpose.
 
     statement   -> ClaimRecord.claim_text
@@ -243,8 +269,8 @@ class ExtractionRecord:
     """
     Full LLM extraction output for one chunk. Written to reviewed/ as JSON.
 
-    Represents the structure of extract_schema.json. Not a DB table --
-    this is the staging format consumed by the human review and load steps (R4).
+    Not a DB table — this is the staging format consumed by the human review
+    and load steps (R4).
 
     List fields (places, characters, factions, key_events) contain entity
     names that are resolved to EntityRecord entries during DB load.

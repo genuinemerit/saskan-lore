@@ -13,7 +13,7 @@ keywords = ["game", "saskantinon", "Saskan Lands", "saskan", "rpg"]
 
 # Single top-level package
 # Poetry will auto-discover packages with __init__.py.
-packages = [{ include = "saskan-lore" }]
+packages = [{ include = "saskan_lore" }]
 
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -36,23 +36,19 @@ include = [
   "README.md",
   "LICENSE",
   "docs/**/*",
-  "saskan-lore/data/**/*"
+  "saskan_lore/data/**/*"
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"
 
 # Core runtime (lean; add more as they become truly required at runtime)
-beautifulsoup4 = "^4.12"
 Levenshtein = "^0.25"
 numpy = "^2.0"
 openai = "^1.0"
-pendulum = "^3.0"
-requests = "^2.32"
 rich = "^13.7"
+alembic = "^1.13"
 SQLAlchemy = "^2.0"
-tabulate = "^0.9"
-tzlocal = "^5.2"
 
 # Heavy/optional at runtime → kept as extras
 matplotlib = { version = "^3.9", optional = true }
@@ -67,9 +63,7 @@ typer = {extras = ["all"], version = "^0.16.1"}
 jsonschema = "^4.25.1"
 pyyaml = "^6.0.2"
 types-pyyaml = "^6.0.12.20250822"
-twisted = "^25.5.0"
 psutil = "^7.0.0"
-pillow = "^11.3.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8"
@@ -101,7 +95,7 @@ target-version = ["py312"]
 [tool.isort]
 profile = "black"
 line_length = 100
-known_first_party = ["saskan"]
+known_first_party = ["saskan_lore"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
@@ -109,7 +103,7 @@ testpaths = ["tests"]
 
 [tool.mypy]
 python_version = "3.12"
-packages = ["saskan-lore"]
+packages = ["saskan_lore"]
 ignore_missing_imports = true
 strict_optional = true
 warn_unused_ignores = true

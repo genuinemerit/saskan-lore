@@ -1,4 +1,4 @@
-# saskan-lore/infra/log/logger.py
+# saskan_lore/infra/log/logger.py
 from __future__ import annotations
 
 import json

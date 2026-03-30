@@ -14,7 +14,7 @@ everything else will follow.
 
 All completed:
 
-- Repo structure and Python package scaffolding (`saskan-lore/saskan-lore/`)
+- Repo structure and Python package scaffolding (`saskan-lore/saskan_lore/`)
 - `pyproject.toml` with Poetry, Python 3.12, all dependencies declared
 - Design docs: `workflows.md`, `reference.md`
 - ADR-001 through ADR-007

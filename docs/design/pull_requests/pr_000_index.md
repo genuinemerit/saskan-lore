@@ -30,8 +30,8 @@ These are instructions to the development team, not git pull requests in the str
 | Non-functional requirements | `docs/architecture/requirements/non-functional/nfr_00x.md` |
 | Workflows | `docs/design/workflows.md` |
 | Glossary | `docs/design/reference.md` |
-| Schemas | `saskan-lore/data/schema/` |
-| Prompts | `saskan-lore/analyzer/` |
+| Schemas | `saskan_lore/data/schema/` |
+| Prompts | `saskan_lore/analyzer/` |
 
 ---
 
