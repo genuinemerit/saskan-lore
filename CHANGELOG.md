@@ -5,6 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.3] - 2026-03-30
+
+### Changed
+
+- `LICENSE` — added explicit carve-out for lore source documents in `data/lore_texts/`
+- `saskan_lore/data/lore_texts/COPYRIGHT` — new All Rights Reserved notice covering the
+  six SaskanCanon PDF source documents; excluded from the MIT license
+- Repository visibility changed from private to public
+
+---
+
+## [0.1.2] - 2026-03-30
+
+### Changed
+
+- `pyproject.toml` — bumped black dev dependency from `^24.8` to `^26.3`; resolves
+  Dependabot security alert (arbitrary file writes via unsanitized cache filename)
+
+---
+
+## [0.1.1] - 2026-03-30
+
+### Removed
+
+- `matplotlib` removed from the `analytics` extra dependency; eliminates transitive
+  Pillow vulnerability flagged by Dependabot
+
+---
+
 ## [0.1.0] - 2026-03-30 — R1 Database Layer
 
 ### Added
