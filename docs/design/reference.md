@@ -251,6 +251,25 @@ A claim is testable if a specific question can be written against it with a veri
 
 ---
 
+## pdfminer.six
+
+[pdfminer.six](https://pdfminersix.readthedocs.io) is a pure-Python PDF text extraction
+library (the Python 3 fork of the original `pdfminer`). Uses layout analysis to extract
+text in reading order.
+
+**Key pattern:**
+
+```python
+from pdfminer.high_level import extract_text
+
+text = extract_text("data/lore_texts/SaskanCanon-VarkaarCovenant.pdf")
+```
+
+In this project: used in `ingest.py` (R2) to extract plain text from lore PDFs before
+passing to `chunk_text()`. Chosen over `pypdf` for more granular layout control.
+
+---
+
 ## Poetry (Virtual Environment)
 
 [Poetry](https://python-poetry.org/) manages dependencies and the virtual environment for this
@@ -289,6 +308,39 @@ poetry env remove python                 # remove the current env (then reinstal
 ```
 
 Applications should commit `poetry.lock`. See `docs/design/workflows.md` for a quick reference.
+
+---
+
+## Typer
+
+[Typer](https://typer.tiangolo.com) is a Python library for building CLI applications, built
+on top of Click. Arguments and options are declared as typed function parameters; help text
+and validation are generated automatically from the annotations.
+
+**Key pattern:**
+
+```python
+import typer
+
+app = typer.Typer()
+
+@app.command()
+def ingest(
+    path: str = typer.Option(..., help="Path to source PDF"),
+    title: str = typer.Option(..., help="Document title"),
+    scope: str = typer.Option("varkaar", help="Lore scope"),
+):
+    ...
+```
+
+The entry point in `pyproject.toml`:
+
+```toml
+[tool.poetry.scripts]
+saskan-lore = "saskan_lore.loader.ingest:app"
+```
+
+In this project: used to expose the `ingest` command in R2.
 
 ---
 

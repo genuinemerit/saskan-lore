@@ -1,6 +1,6 @@
 # Release 2: Source Ingestion and Chunking
 
-Status: **Pending R1**
+Status: **Ready**
 
 ## Objective
 
@@ -12,7 +12,7 @@ and chunks, ready for extraction.
 
 ## Deliverables
 
-- `saskan_lore/loader/load_document.py` — register a source document (FR-001)
+- `saskan_lore/loader/register_lore_text.py` — register a source document (FR-001)
 - `saskan_lore/loader/load_chunks.py` — run chunker on a document and persist chunks (FR-002)
 - `saskan_lore/loader/ingest.py` — top-level entry point that chains registration + chunking
 - CLI command wired via Typer (e.g., `poetry run saskan-lore ingest <path>`)
@@ -39,15 +39,32 @@ and chunks, ready for extraction.
 
 ### Document registration
 
-Check for an existing document by `source_path` before inserting. If found, return the
-existing record without creating a duplicate.
+Check for an existing document by `source_path` **or** `content_hash` before inserting.
+If either matches, return the existing record without creating a duplicate. This guards
+against both re-ingestion of the same path and re-ingestion of a renamed copy of the
+same file.
+
+`content_hash` is a SHA-256 of the raw PDF bytes, computed via `get_sha256()` from
+`saskan_lore/tools/utils/shell.py` before calling `register_document`.
 
 ```python
-def register_document(session, title, source_path, scope="varkaar"):
-    doc = session.query(Document).filter_by(source_path=source_path).first()
+def register_document(session, title, source_path, content_hash, scope="varkaar"):
+    doc = (
+        session.query(Document)
+        .filter(
+            (Document.source_path == source_path)
+            | (Document.content_hash == content_hash)
+        )
+        .first()
+    )
     if doc:
         return doc
-    doc = Document(title=title, source_path=source_path, scope=scope)
+    doc = Document(
+        title=title,
+        source_path=source_path,
+        content_hash=content_hash,
+        scope=scope,
+    )
     session.add(doc)
     session.commit()
     return doc
@@ -59,21 +76,34 @@ def register_document(session, title, source_path, scope="varkaar"):
 
 ```python
 def load_chunks(session, document: Document, text: str):
-    existing = session.query(Chunk).filter_by(document_id=document.id).count()
-    if existing > 0:
-        return  # already chunked; idempotent
     chunks = chunk_text(text)
+    existing = session.query(Chunk).filter_by(document_id=document.id).count()
+    if existing == len(chunks):
+        return  # complete set already stored; idempotent
+    # Missing or incomplete — delete any partial set and re-load all chunks.
+    session.query(Chunk).filter_by(document_id=document.id).delete()
     for i, chunk_text_val in enumerate(chunks):
         session.add(Chunk(document_id=document.id, sequence=i, text=chunk_text_val))
     session.commit()
 ```
 
+The idempotence guard compares the stored count against the expected total. A simple
+`existing > 0` check would leave a partially-written set permanently stuck if ingestion
+failed mid-way. Comparing to `len(chunks)` allows safe re-runs after partial failures
+without manual DB cleanup, while still being a no-op when the document is fully chunked.
+
+All chunks for a document are always loaded in a single call — full document, sequence
+starting at 0. Range selection (e.g. "chunks 5–20 only") belongs at the extraction layer
+(R3), not here. Chunking is cheap; extraction is the expensive, human-gated step where
+batching makes sense.
+
 ### PDF text extraction
 
-The source files are PDFs. A PDF-to-text step is needed before chunking. Use `pdfminer.six`
-(already a reasonable dep) or `pypdf`. Extract as plain text, then pass to `chunk_text()`.
-Approved normalization: collapse multiple whitespace, strip page headers/footers if
-consistently identifiable. Do not alter the text content itself. See ADR-007.
+The source files are PDFs. A PDF-to-text step is needed before chunking. **Chosen
+library: `pdfminer.six`** — add to `pyproject.toml` dependencies. Extract as plain text
+via `pdfminer.high_level.extract_text()`, then pass to `chunk_text()`. Approved
+normalization: collapse multiple whitespace, strip page headers/footers if consistently
+identifiable. Do not alter the text content itself. See ADR-007.
 
 ### Ingest entry point
 
@@ -87,14 +117,18 @@ ingest.py:
 
 ### CLI
 
-Wire the `ingest` command in `pyproject.toml` under `[tool.poetry.scripts]` or as a Typer
-app. Minimum interface:
+Wire the `ingest` command using **Typer** (see `docs/design/reference.md`). Add a
+`[tool.poetry.scripts]` entry in `pyproject.toml` pointing to the Typer app entry point.
+Minimum interface:
 
 ```txt
 saskan-lore ingest --path data/lore_texts/SaskanCanon-VarkaarCovenant.pdf
-                   --title "Saskan Canon — Varkaar Covenant"
+                   --title "Saskan Canon: Varkaar Covenant"
                    --scope varkaar
 ```
+
+If CLI scaffolding grows beyond a single command, break into a separate sub-feature
+(R2.1_cli) and keep ingestion logic in R2.2_ingestion.
 
 ---
 
@@ -102,10 +136,40 @@ saskan-lore ingest --path data/lore_texts/SaskanCanon-VarkaarCovenant.pdf
 
 - Test `register_document()` idempotence: calling twice with the same path returns the
   same record and does not insert a duplicate.
-- Test `load_chunks()` idempotence: calling twice on the same document does not add chunks.
+- Test `load_chunks()` idempotence: calling twice on a fully-chunked document does not add
+  or replace chunks.
+- Test `load_chunks()` partial-failure recovery: if fewer chunks than expected are present,
+  a second call replaces them with the complete set.
 - Test that chunk sequence is monotonically increasing from 0.
 - Test that chunk text matches the source (no silent modification).
 - Use a small fixture text string instead of a real PDF for unit tests.
+
+---
+
+## Progress
+
+### Implementation
+
+- [x] `saskan_lore/loader/register_lore_text.py` — `register_document()`: scope guard, file
+  existence check, SHA-256 content hash, dual idempotence check (source_path or
+  content_hash), insert on first call, return existing on repeat
+- [x] `saskan_lore/loader/load_metadata.py` — deleted (dead stub from early design)
+- [x] `saskan_lore/loader/load_chunks.py` — `load_chunks()`: full-document chunking,
+  count-based idempotence guard, partial-failure recovery; returns chunk count stored
+- [x] `saskan_lore/loader/ingest.py` — `ingest` Typer command: PDF extraction (pdfminer.six),
+  whitespace normalization, `register_document()`, `load_chunks()`, structured logging;
+  clean error messages and non-zero exit on failure; no-op message when already ingested
+- [x] `pyproject.toml` — `[tool.poetry.scripts]` entry: `saskan-lore = "saskan_lore.loader.ingest:app"`
+
+### Testing
+
+- [x] `tests/unit/r2_ingestion/test_r2_ingestion.py` — 10/10 passing (TC-R2-01 through TC-R2-10)
+
+### Notes
+
+- `get_sha256()` in `shell.py` hashes a `str` (encodes to UTF-8 internally). For raw PDF
+  bytes, `hashlib.sha256(path.read_bytes()).hexdigest()` is used directly in
+  `load_document.py` — no change to `shell.py` needed.
 
 ---
 

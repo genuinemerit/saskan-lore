@@ -46,6 +46,7 @@ python = ">=3.12,<3.13"
 Levenshtein = "^0.25"
 numpy = "^2.0"
 openai = "^1.0"
+pdfminer-six = "^20231228"
 rich = "^13.7"
 alembic = "^1.13"
 SQLAlchemy = "^2.0"
@@ -78,6 +79,9 @@ import-linter = "^2.4"
 analytics = ["pandas", "nltk"]
 gui = ["pygame"]
 postgres = ["psycopg"]
+
+[tool.poetry.scripts]
+saskan-lore = "saskan_lore.loader.ingest:app"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/genuinemerit/saskan-lore/issues"
