@@ -51,7 +51,6 @@ alembic = "^1.13"
 SQLAlchemy = "^2.0"
 
 # Heavy/optional at runtime → kept as extras
-matplotlib = { version = "^3.9", optional = true }
 nltk = { version = "^3.9", optional = true }
 pandas = { version = "^2.2", optional = true }
 
@@ -76,7 +75,7 @@ pre-commit = "^4.3.0"
 import-linter = "^2.4"
 
 [tool.poetry.extras]
-analytics = ["matplotlib", "pandas", "nltk"]
+analytics = ["pandas", "nltk"]
 gui = ["pygame"]
 postgres = ["psycopg"]
 
