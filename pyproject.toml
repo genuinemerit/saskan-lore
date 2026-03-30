@@ -68,6 +68,7 @@ psutil = "^7.0.0"
 [tool.poetry.group.dev.dependencies]
 black = "^24.8"
 isort = "^5.13"
+ruff = "^0.8"
 pytest = "^8.3"
 coverage = "^7.6"
 mypy = "^1.11"  # optional, but good to have
@@ -100,6 +101,10 @@ known_first_party = ["saskan_lore"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+markers = [
+  "unit: fast, isolated unit tests (no I/O, no external services)",
+  "integration: cross-layer tests; may use real files, DB, or external APIs",
+]
 
 [tool.mypy]
 python_version = "3.12"

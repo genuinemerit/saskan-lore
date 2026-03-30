@@ -16,6 +16,7 @@ Public API:
     table_info(table_name)  -- column names, types, nullability, and indexes
     show_rows(table, limit) -- print a sample of rows from any table
 """
+
 from __future__ import annotations
 
 import os
@@ -160,9 +161,7 @@ def show_rows(table_name: str, limit: int = 10) -> None:
         if not rows:
             print(f"[{table_name}] — no rows found.")
             return
-        keys = session.execute(
-            text(f"SELECT * FROM {table_name} LIMIT 0")  # noqa: S608
-        ).keys()
+        keys = session.execute(text(f"SELECT * FROM {table_name} LIMIT 0")).keys()  # noqa: S608
         print(f"\n[{table_name}] — {len(rows)} row(s) shown (limit {limit})")
         print(tabulate(rows, headers=list(keys), tablefmt="simple"))
 

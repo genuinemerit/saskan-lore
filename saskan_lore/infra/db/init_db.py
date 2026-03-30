@@ -13,6 +13,7 @@ Usage:
         from saskan_lore.infra.db.init_db import init_db
         init_db()
 """
+
 from __future__ import annotations
 
 from alembic import command

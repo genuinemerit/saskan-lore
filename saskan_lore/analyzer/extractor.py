@@ -103,9 +103,7 @@ def extract_claims(
     """
     system_prompt = _load_prompt("extract_claims.txt")
     user_message = (
-        f"chunk_id: {chunk_id}\n"
-        f"document_id: {document_id}\n\n"
-        f"Passage:\n{chunk_text}"
+        f"chunk_id: {chunk_id}\n" f"document_id: {document_id}\n\n" f"Passage:\n{chunk_text}"
     )
     try:
         response = _get_client().chat.completions.create(

@@ -40,6 +40,10 @@ nosetests.xml
 .pytest_cache/
 .benchmarks/
 
+# Test output: generated result files (inspectable after a run, not versioned)
+tests/output/*
+!tests/output/.gitkeep
+
 # --- Logs & debug ---
 log/
 debug/

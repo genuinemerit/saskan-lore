@@ -7,6 +7,7 @@ Defines Base, TimestampMixin, and all nine DB table model classes.
 For field-level reference see: saskan_lore/data/schema/database_schema.py
 For schema design notes see:   docs/design/pull_requests/r1_database/design.md
 """
+
 from __future__ import annotations
 
 from sqlalchemy import (
@@ -38,9 +39,7 @@ class TimestampMixin:
 
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(
-        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
-    )
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +77,7 @@ class Chunk(TimestampMixin, Base):
     text = Column(Text, nullable=False)
     summary = Column(Text, nullable=True)
     era = Column(String(100), nullable=True)
-    canon_level = Column(String(50), nullable=True)   # canonical|apocryphal|disputed
+    canon_level = Column(String(50), nullable=True)  # canonical|apocryphal|disputed
     char_start = Column(Integer, nullable=True)
     char_end = Column(Integer, nullable=True)
 
@@ -217,8 +216,8 @@ class EvalResult(TimestampMixin, Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     question_id = Column(Integer, ForeignKey("eval_questions.id"), nullable=False, index=True)
     model_answer = Column(Text, nullable=False)
-    retrieved_evidence = Column(Text, nullable=True)   # JSON list of claim IDs
-    pass_fail = Column(String(10), nullable=True)       # pass | fail
+    retrieved_evidence = Column(Text, nullable=True)  # JSON list of claim IDs
+    pass_fail = Column(String(10), nullable=True)  # pass | fail
     failure_type = Column(String(30), nullable=True)
     notes = Column(Text, nullable=True)
     run_at = Column(DateTime, nullable=True)

@@ -1,6 +1,6 @@
 # Release 1: Database Layer
 
-Status: **Ready to build**
+Status: **Complete**
 
 ## Objective
 
@@ -196,10 +196,12 @@ Store the DB path in `DATABASE_URL` (env var). Read it in `infra/db/db.py` and i
 
 ### Testing
 
-- [ ] pytest fixture: in-memory SQLite DB, creates all tables, yields session, tears down
-- [ ] `status` defaults to `'pending'` on a new Claim
-- [ ] FK pragma active: orphaned child insert raises `IntegrityError` (requires FK constraints — R1 round 2)
-- [ ] Schema matches FR-001 through FR-005 and FR-008 field definitions
+- [x] pytest fixture: in-memory SQLite DB (StaticPool), FK pragma ON, yields session, tears down — `tests/conftest.py`
+- [x] `status` defaults to `'pending'` on a new Claim
+- [x] FK pragma active: orphaned child inserts raise `IntegrityError` (TC-R1-05, TC-R1-06, TC-R1-09)
+- [x] Schema matches FR-001 through FR-005 and FR-008 field definitions (TC-R1-01, TC-R1-10)
+- [x] Unique constraints enforced: `Entity.canonical_name`, `(entity_id, alias)` (TC-R1-07, TC-R1-08)
+- [x] `is_active` defaults to `True` (TimestampMixin); nullable columns accept `None` (TC-R1-03, TC-R1-04)
 
 - [x] `saskan_lore/infra/db/dba.py` — DB admin utilities: `summary()`, `alembic_version()`, `db_size()`, `row_counts()`, `inactive_counts()`, `check_schema()`, `table_info()`, `show_rows()`
 

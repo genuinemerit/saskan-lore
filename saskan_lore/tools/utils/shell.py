@@ -24,8 +24,11 @@ def run_cmd(cmd: str) -> tuple[bool, str]:
         return False, ""
     try:
         proc = subprocess.Popen(
-            cmd, shell=True, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
         output, _ = proc.communicate()
         success = not any(kw in output for kw in (b"failure", b"fatal"))

@@ -14,6 +14,7 @@ For Postgres: change DATABASE_URL to a postgresql+psycopg:// URL.
 No code changes needed — the FK pragma is SQLite-only and is skipped
 automatically for other dialects.
 """
+
 from __future__ import annotations
 
 import os
@@ -35,10 +36,7 @@ def get_engine() -> Engine:
     if _engine is None:
         url = os.getenv("DATABASE_URL")
         if not url:
-            raise EnvironmentError(
-                "DATABASE_URL is not set. "
-                "Source env.local before running."
-            )
+            raise EnvironmentError("DATABASE_URL is not set. " "Source env.local before running.")
         _engine = _create_engine(url, echo=False)
     return _engine
 

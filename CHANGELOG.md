@@ -5,6 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.0] - 2026-03-30 — R1 Database Layer
+
+### Added
+
+- `saskan_lore/data/models.py` — SQLAlchemy ORM models for all 9 tables with `TimestampMixin`
+  (`is_active`, `created_at`, `updated_at`), indexes, unique constraints, and FK constraints
+- `saskan_lore/infra/db/db.py` — engine singleton, `get_session()` context manager,
+  SQLite FK pragma hook, `reset_engine()` for test fixtures
+- `saskan_lore/infra/db/dba.py` — DB admin/reporting utilities: `summary()`, `row_counts()`,
+  `inactive_counts()`, `check_schema()`, `table_info()`, `show_rows()`, `alembic_version()`,
+  `db_size()`
+- `saskan_lore/infra/db/init_db.py` — one-shot DB initialisation via `alembic upgrade head`
+- `alembic/` — Alembic configuration, initial schema migration, and FK constraint migration
+- `data/saskan_lore.db` — local SQLite DB (gitignored); created and validated in DBeaver
+- `tests/conftest.py` — shared pytest fixture: in-memory SQLite, StaticPool, FK pragma ON
+- `tests/unit/r1_database/test_r1_db.py` — 10 unit tests covering schema structure, column
+  defaults, nullability, unique constraints, FK enforcement, and full insert chain
+- `tests/fixtures/`, `tests/output/` — test data directories
+- `scripts/commit.sh`, `scripts/release.sh` — git commit and release automation scripts
+- `docs/design/pull_requests/r1_database/test_cases.md` — R1 test case register
+- `.pre-commit-config.yaml` — pre-commit hooks: black (formatting) and ruff (linting)
+
+### Changed
+
+- `pyproject.toml` — added `ruff` dev dependency; added pytest markers (`unit`, `integration`);
+  activated semantic versioning starting at `v0.1.0`
+- `saskan_lore/analyzer/character_counter.py` — promoted bare stub code to a proper function
+- `docs/design/workflows.md` — added Testing and Version Control sections
+
+---
+
 ## [Pre-release] - 2026-03-30
 
 ### Added
