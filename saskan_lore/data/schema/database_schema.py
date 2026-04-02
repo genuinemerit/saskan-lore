@@ -253,12 +253,12 @@ class ExtractionClaimRecord:
 
     Maps to ClaimRecord on DB load; field names are aligned for that purpose.
 
-    statement   -> ClaimRecord.claim_text
+    claim_text  -> ClaimRecord.claim_text
     confidence  -> ClaimRecord.confidence
     source_span -> ClaimRecord.source_span
     """
 
-    statement: str  # the extracted claim; maps to ClaimRecord.claim_text
+    claim_text: str  # the extracted claim; maps to ClaimRecord.claim_text
     source_span: str  # verbatim quote from source
     truth_status: str  # fact | belief | interpretation | rumor
     confidence: str | None = field(default=None)  # high | medium | low

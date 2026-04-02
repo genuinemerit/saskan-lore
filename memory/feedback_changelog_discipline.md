@@ -6,7 +6,7 @@ type: feedback
 
 All changes made while working on a release — including housekeeping clean-ups, minor
 refactors, and doc updates — should be recorded in the `design.md` for that release
-(e.g. `docs/design/pull_requests/r3_extraction/design.md`).
+(e.g. `docs/design/r3_extraction/design.md`).
 
 **Why:** Keeps the design doc as a complete record of what changed and when, not just
 the planned deliverables.

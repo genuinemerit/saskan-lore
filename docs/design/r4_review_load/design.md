@@ -1,6 +1,6 @@
 # Release 4: Human Review and Load
 
-Status: **Pending R3**
+Status: **In Progress**
 
 ## Objective
 
@@ -103,6 +103,17 @@ For entities, check by `canonical_name`. For relationships, check by
 Insert with `status="rejected"`, `reviewed=False`. Do not delete. This preserves the
 audit trail and allows the reviewer to revisit a rejected claim later.
 
+### Staging schema and post-review files
+
+`extract_schema.json` covers extractor output only — it enforces `reviewed=false` and
+`additionalProperties=false` on claims. Post-review staging files diverge from this
+(claims may have `reviewed=true`, `status`, or `reject_reason`), so `validate_staging()`
+is not used by the loader. The loader performs its own field-level validation in code.
+
+`reject_reason` is a staging-only field written by `review_staging.py` when a reviewer
+provides a reason for rejection. It is not a DB column — the loader logs it during a
+load run but does not write it to any table.
+
 ---
 
 ## Testability Considerations
@@ -113,6 +124,45 @@ audit trail and allows the reviewer to revisit a rejected claim later.
 - Test idempotence: loading the same staging file twice produces no duplicate records.
 - Test that rejected claims are inserted with `status="rejected"`, not silently dropped.
 - Test the load order: claims cannot be loaded before their parent chunks exist.
+
+---
+
+## Progress
+
+### Housekeeping
+
+- [x] `ExtractionClaimRecord.statement` renamed to `claim_text` in `database_schema.py`,
+  `extract_schema.json`, and `tests/unit/r3_extraction/test_r3_extraction.py` — aligns
+  staging field names with DB column names
+- [x] `docs/design/pull_requests/` directory removed; all release design docs lifted to
+  `docs/design/r*/` via `git mv`; `pr_000_index.md` renamed to `design_000_index.md`;
+  all path references updated across CHANGELOG, README, source files, tests, and memory
+- [x] `README.md` updated — status table, models/hardware section, current version,
+  lore texts copyright notice, `setenv.sh` in getting started steps
+
+### Implementation
+
+- [x] `saskan_lore/loader/load_entities.py` — `load_entities()`, `load_entity_aliases()`;
+  idempotence by `canonical_name` / `(entity_id, alias)`
+- [x] `saskan_lore/loader/load_reviewed.py` — orchestrates full load order for a staging
+  file: entities → aliases → claims → claim_entities → relationships; validation,
+  skip-and-log, post-load summary; `validate_staging()` not used (see design notes)
+- [x] `saskan_lore/loader/load_relationships.py` — `load_relationships()`; no-op for
+  current staging format (no relationship data); skips unknown entities; ready for future
+  staging format extension
+- [x] `saskan_lore/loader/review_staging.py` — interactive per-claim review: display
+  `claim_text` + `source_span` + `truth_status`, prompt A/C/R/Q, write back approved /
+  rejected state to staging JSON; partial state preserved on interrupt; `reject_reason`
+  stored as optional staging field
+- [x] CLI commands `review` and `load` added to `saskan_lore/loader/ingest.py` Typer app
+
+### Testing
+
+- [x] `tests/unit/r4_review_load/test_r4_review_load.py` — 10 unit tests covering load
+  validation, idempotence, rejected claims, load order, and relationship FK guard
+  (TC-R4-01 through TC-R4-10); all passing
+
+### Notes
 
 ---
 

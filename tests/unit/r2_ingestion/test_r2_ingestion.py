@@ -3,7 +3,7 @@
 R2 ingestion unit tests.
 
 Covers: register_document (register_lore_text.py) and load_chunks (load_chunks.py).
-See docs/design/pull_requests/r2_ingestion/test_cases.md for the full test-case
+See docs/design/r2_ingestion/test_cases.md for the full test-case
 register (TC-R2-01 through TC-R2-10).
 
 All tests use the db_session fixture from tests/conftest.py:

@@ -5,6 +5,8 @@ Top-level CLI entry point for saskan-lore.
 Commands:
     ingest  -- extract text from a PDF, register it, and chunk it (R2)
     extract -- run lore extraction on one chunk or all chunks for a document (R3)
+    review  -- interactively review claims in a staging file (R4)
+    load    -- load a reviewed staging file into the database (R4)
 
 CLI entry point (pyproject.toml):
     [tool.poetry.scripts]
@@ -28,6 +30,8 @@ from saskan_lore.infra.db.db import get_session
 from saskan_lore.infra.log.logger import configure, get_logger
 from saskan_lore.loader.load_chunks import load_chunks
 from saskan_lore.loader.register_lore_text import register_document
+from saskan_lore.loader.load_reviewed import load_file, print_load_summary
+from saskan_lore.loader.review_staging import print_summary, review_file
 
 app = typer.Typer(
     name="saskan-lore",
@@ -261,6 +265,106 @@ def _get_chunks_for_document(session, document_id: int) -> list[tuple[Chunk, Doc
         .all()
     )
     return [(chunk, document) for chunk in chunks]
+
+
+@app.command()
+def review(
+    staging_file: str = typer.Argument(
+        ...,
+        help=(
+            "Path to a staging JSON file to review. "
+            "Example: var/reviewed/chunk_0001_extraction.json"
+        ),
+    ),
+) -> None:
+    """Interactively review claims in a staging file.
+
+    Presents each unreviewed claim with its claim_text, source_span, and
+    truth_status, then prompts for Approve / Correct / Reject / Quit.
+
+    Approved claims are marked reviewed=true. Rejected claims are marked
+    status=rejected with an optional reason. Claims marked for correction
+    are left unchanged for direct JSON editing and a subsequent re-run.
+
+    Partial state is written back if the session ends early (Q or Ctrl-C).
+    Already-decided claims are skipped automatically.
+    """
+    configure()
+
+    from pathlib import Path  # noqa: PLC0415
+
+    path = Path(staging_file)
+    if not path.exists():
+        typer.echo(f"Error: file not found: {staging_file}", err=True)
+        log.error("Staging file not found", extra={"path": staging_file})
+        raise typer.Exit(code=1)
+
+    if not path.suffix == ".json":
+        typer.echo("Error: staging file must be a .json file.", err=True)
+        raise typer.Exit(code=1)
+
+    try:
+        counts = review_file(path)
+    except Exception as exc:
+        typer.echo(f"Error: review failed: {exc}", err=True)
+        log.error("Review failed", extra={"path": staging_file, "error": str(exc)})
+        raise typer.Exit(code=1)
+
+    print_summary(counts)
+    log.info("Review complete", extra={"path": staging_file, **counts})
+
+
+@app.command()
+def load(
+    staging_file: str = typer.Argument(
+        ...,
+        help=(
+            "Path to a reviewed staging JSON file to load. "
+            "Example: var/reviewed/chunk_0001_extraction.json"
+        ),
+    ),
+) -> None:
+    """Load a reviewed staging file into the database.
+
+    Runs the full load sequence in dependency order: entities, claims,
+    claim-entity links, and relationships. Only claims marked reviewed=true
+    are inserted as approved. Claims marked status=rejected are inserted
+    with that status to preserve the audit trail. Unreviewed claims are
+    skipped.
+
+    The load is idempotent: re-running on the same file produces no
+    duplicate records.
+    """
+    configure()
+
+    from pathlib import Path  # noqa: PLC0415
+
+    path = Path(staging_file)
+    if not path.exists():
+        typer.echo(f"Error: file not found: {staging_file}", err=True)
+        log.error("Staging file not found", extra={"path": staging_file})
+        raise typer.Exit(code=1)
+
+    if not path.suffix == ".json":
+        typer.echo("Error: staging file must be a .json file.", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Loading: {path.name}")
+
+    try:
+        with get_session() as session:
+            summary = load_file(session, path)
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("Load rejected", extra={"path": staging_file, "reason": str(exc)})
+        raise typer.Exit(code=1)
+    except Exception as exc:
+        typer.echo(f"Error: load failed: {exc}", err=True)
+        log.error("Load failed", extra={"path": staging_file, "error": str(exc)})
+        raise typer.Exit(code=1)
+
+    print_load_summary(summary)
+    log.info("Load complete", extra={"path": staging_file, **summary})
 
 
 if __name__ == "__main__":

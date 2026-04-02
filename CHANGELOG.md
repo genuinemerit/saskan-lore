@@ -5,6 +5,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.0] - 2026-04-03 — R4 Human Review and Load
+
+### Added
+
+- `saskan_lore/loader/review_staging.py` — `review_file()`: interactive per-claim
+  review (approve / correct / reject / quit); writes back partial state on interrupt
+  via try/finally; `reject_reason` stored as optional staging field; `print_summary()`
+- `saskan_lore/loader/load_entities.py` — `load_entities()`: inserts Entity records
+  from staging lists (places, characters, factions, key_events); returns name→id map;
+  idempotent by `canonical_name`; `load_entity_aliases()`: stub, no-op for current
+  staging format; ready for future alias data
+- `saskan_lore/loader/load_relationships.py` — `load_relationships()`: inserts typed
+  directed relationships; idempotent by `(source_id, target_id, relationship_type)`;
+  no-op for current staging format (no relationship data); ready for future extension
+- `saskan_lore/loader/load_reviewed.py` — `load_file()`: orchestrates full load
+  sequence (entities → aliases → claims → claim-entity links → relationships); owns
+  transaction commit; skip-and-log validation; `print_load_summary()`
+- `saskan-lore review <staging-file>` CLI command added to `loader/ingest.py`
+- `saskan-lore load <staging-file>` CLI command added to `loader/ingest.py`
+- `docs/design/r4_review_load/test_cases.md` — R4 test case register
+- `docs/design/backlog.md` — design backlog for deferred items, tech debt, and future
+  design candidates (BL-001 through BL-008)
+
+### Changed
+
+- `saskan_lore/data/schema/database_schema.py` — `ExtractionClaimRecord.statement`
+  renamed to `claim_text` to align staging field names with DB column names
+- `saskan_lore/data/schema/extract_schema.json` — `statement` renamed to `claim_text`
+  in claim schema; description updated to clarify this schema covers extractor output
+  only; post-review files validated by loader in code
+- `saskan_lore/loader/ingest.py` — `review` and `load` commands added; module
+  docstring updated
+- `docs/design/pull_requests/` directory removed; all release design docs lifted to
+  `docs/design/r*/` via `git mv`; `pr_000_index.md` renamed `design_000_index.md`;
+  all internal path references updated across source, tests, docs, and memory
+- `docs/design/design_000_index.md` — release statuses updated; cross-reference table
+  corrected (workflows and glossary paths); backlog entry added
+- `docs/design/r4_review_load/design.md` — status → In Progress; Progress checklist
+  added; design notes for staging schema boundary and `reject_reason` added
+- `README.md` — status table updated through R4; models and hardware section added;
+  current version noted; lore texts copyright notice added; `setenv.sh` in setup steps
+
+### Tests
+
+- `tests/unit/r4_review_load/test_r4_review_load.py` — 10 unit tests; all passing
+  (TC-R4-01 through TC-R4-10)
+- `tests/unit/r3_extraction/test_r3_extraction.py` — updated for `claim_text` rename
+- Full suite: 40/40 passing
+
+---
+
 ## [0.3.0] - 2026-04-02 — R3 Extraction Pipeline
 
 ### Added
@@ -27,7 +78,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`file_io.py`, `match_semver.py`, `platform.py`, `shell.py`, `stamps.py`)
 - `docs/architecture/decisions/adr_008.md` — multi-environment config and platform-aware
   model selection (Darwin: Metal/gpu_layers=-1; Linux: CPU/gpu_layers=0)
-- `docs/design/pull_requests/r3_extraction/test_cases.md` — R3 test case register
+- `docs/design/r3_extraction/test_cases.md` — R3 test case register
 - `docs/guides/reference.md` — MagicMock and monkeypatch (pytest) glossary entries added
 - `docs/guides/workflows.md` — updated to reflect `var/` paths and R3 test structure
 
@@ -71,13 +122,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `pdfminer-six` runtime dependency added
 - `[tool.poetry.scripts]` entry in `pyproject.toml`: `saskan-lore` CLI wired to
   `saskan_lore.loader.ingest:app`
-- `docs/design/pull_requests/r2_ingestion/test_cases.md` — R2 test case register
+- `docs/design/r2_ingestion/test_cases.md` — R2 test case register
 - `docs/guides/user.md` — new user guide documenting public function call patterns
 - `docs/design/reference.md` — Typer and pdfminer.six entries added
 
 ### Changed
 
-- `docs/design/pull_requests/r2_ingestion/design.md` — finalised design decisions:
+- `docs/design/r2_ingestion/design.md` — finalised design decisions:
   pdfminer.six chosen, content_hash dual-check, range-selection rationale, CLI notes
 - `.markdownlint.json` — MD013 line_length set to 100 (matching Python and editorconfig)
 
@@ -141,7 +192,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   defaults, nullability, unique constraints, FK enforcement, and full insert chain
 - `tests/fixtures/`, `tests/output/` — test data directories
 - `scripts/commit.sh`, `scripts/release.sh` — git commit and release automation scripts
-- `docs/design/pull_requests/r1_database/test_cases.md` — R1 test case register
+- `docs/design/r1_database/test_cases.md` — R1 test case register
 - `.pre-commit-config.yaml` — pre-commit hooks: black (formatting) and ruff (linting)
 
 ### Changed

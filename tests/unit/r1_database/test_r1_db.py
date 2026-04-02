@@ -3,7 +3,7 @@
 R1 database layer unit tests.
 
 Covers: schema structure, column defaults, nullability, unique constraints,
-and FK enforcement.  See docs/design/pull_requests/r1_database/test_cases.md
+and FK enforcement.  See docs/design/r1_database/test_cases.md
 for the full test-case register (TC-R1-01 through TC-R1-10).
 
 All tests use the db_session fixture from tests/conftest.py:

@@ -139,7 +139,7 @@ poetry run pytest tests/integration/
 Each release has a companion `test_cases.md` under its design folder, e.g.:
 
 ```text
-docs/design/pull_requests/r1_database/test_cases.md
+docs/design/r1_database/test_cases.md
 ```
 
 That file records planned test cases, requirements coverage, and run results.

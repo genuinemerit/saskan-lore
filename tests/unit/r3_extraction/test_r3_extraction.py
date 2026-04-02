@@ -3,7 +3,7 @@
 R3 extraction unit tests.
 
 Covers: extract_chunk (extractor.py) and staging utilities (staging.py).
-See docs/design/pull_requests/r3_extraction/test_cases.md for the full
+See docs/design/r3_extraction/test_cases.md for the full
 test-case register (TC-R3-01 through TC-R3-10).
 
 llama_cpp is mocked at the conftest level; complete() is patched per-test.
@@ -49,7 +49,9 @@ _GOOD_RESPONSE = json.dumps(
         "key_events": [],
         "claims": [
             {
-                "statement": "The Covenant of Varkaar governed oath law in the northern provinces.",
+                "claim_text": (
+                    "The Covenant of Varkaar governed oath law in the northern provinces."
+                ),
                 "source_span": "The Covenant of Varkaar was established in the third era.",
                 "truth_status": "fact",
                 "confidence": "high",
@@ -75,7 +77,7 @@ _REVIEWED_TRUE_RESPONSE = json.dumps(
         "key_events": [],
         "claims": [
             {
-                "statement": "A claim.",
+                "claim_text": "A claim.",
                 "source_span": "A verbatim quote.",
                 "truth_status": "fact",
                 "confidence": "high",
@@ -316,7 +318,7 @@ def test_validate_staging_invalid():
         "key_events": [],
         "claims": [
             {
-                "statement": "A claim.",
+                "claim_text": "A claim.",
                 # source_span missing — violates NFR-003 and schema minLength:1
                 "truth_status": "fact",
                 "reviewed": False,

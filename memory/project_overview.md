@@ -115,7 +115,7 @@ SQLite DB + Alembic migrations, full R2 ingestion pipeline (`ingest` CLI). Versi
   Model filenames live in `_MAC_MODEL` / `_LINUX_MODEL` vars at top of script.
   Verified working on Mac (Darwin → 7B model, gpu_layers=-1).
 - `docs/guides/reference.md` reorganized alphabetically with TOC
-- `docs/design/pull_requests/r3_extraction/design.md` updated: status → In Progress,
+- `docs/design/r3_extraction/design.md` updated: status → In Progress,
   environment setup progress table added, changes logged
 
 **Next steps (Linux session):**
