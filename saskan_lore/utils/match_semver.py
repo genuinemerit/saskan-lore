@@ -1,4 +1,4 @@
-# saskan_lore/tools/utils/match_semver.py
+# saskan_lore/utils/match_semver.py
 
 import re
 

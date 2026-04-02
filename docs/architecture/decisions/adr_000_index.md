@@ -11,3 +11,4 @@ One ADR per file. Each captures a decision, its rationale, and its implications.
 | [ADR-005](adr_005.md) | Relationships Modeled from the Start |
 | [ADR-006](adr_006.md) | Scope Limited to Covenant of Varkaar |
 | [ADR-007](adr_007.md) | No Lore Expansion During Extraction |
+| [ADR-008](adr_008.md) | Multi-Environment Configuration and Platform-Aware Model Selection |

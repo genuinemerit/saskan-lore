@@ -24,8 +24,8 @@ All completed:
 - Prompt templates: `analyzer/extract_claims.txt`, `analyzer/structure_claims_metadata.txt`
 - `analyzer/chunker.py` — sentence-aware, reproducible text chunker
 - `analyzer/extractor.py` — OpenAI gpt-4o extraction; `extract_claims()` and `structure_claims()`
-- Utility stubs: `tools/utils/platform.py`, `tools/utils/stamps.py`, `tools/utils/file_io.py`,
-  `tools/utils/shell.py`, `tools/utils/match_semver.py`
+- Utility stubs: `utils/platform.py`, `utils/stamps.py`, `utils/file_io.py`,
+  `utils/shell.py`, `utils/match_semver.py`
 
 ---
 

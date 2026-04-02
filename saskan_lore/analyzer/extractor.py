@@ -2,25 +2,21 @@
 """
 extractor.py
 
-OpenAI-based lore extraction functions.
+Lore extraction pipeline for saskan-lore.
 
-Two public functions:
+Public function:
 
-    extract_claims(chunk_text, chunk_id, document_id) -> ExtractionRecord | None
-        Primary extraction step. Takes a raw chunk of lore text and returns a
-        structured ExtractionRecord. Uses the extract_claims.txt system prompt.
+    extract_chunk(chunk, document) -> Path | None
+        Extract claims from a chunk using the local GGUF model.
+        Writes a staging JSON file to REVIEWED_DIR and returns its path.
+        On scope mismatch: logs a warning and returns None (no file written).
+        On parse failure: writes an error-flagged file and returns that path.
 
-    structure_claims(raw_text, chunk_id, document_id) -> ExtractionRecord | None
-        Recovery/structuring step. Takes malformed or free-text extraction output
-        and normalizes it to ExtractionRecord. Uses structure_claims_metadata.txt.
-        Use this when extract_claims() returns None due to malformed model output.
+The extractor does not write to the database. It produces staging JSON files only.
+Human review of staging files occurs in R4 before any DB load.
 
-Both functions return None on API error or JSON parse failure; errors are logged.
-
-Model: gpt-4o (JSON mode via response_format).
-Requires: OPENAI_API_KEY environment variable.
-
-See: R3 design doc, ADR-007 (no lore expansion), NFR-002 (replaceable model layer).
+See: R3 design doc, NFR-002 (replaceable model layer), NFR-003 (traceability),
+     ADR-006 (varkaar scope guard), ADR-007 (no lore expansion).
 """
 
 from __future__ import annotations
@@ -30,144 +26,147 @@ import logging
 import os
 from pathlib import Path
 
-from openai import OpenAI
-
-from ..data.schema.database_schema import ExtractionClaimRecord, ExtractionRecord
+from ..data.models import Chunk, Document
+from .inference import complete
 
 log = logging.getLogger(__name__)
 
-_MODEL = "gpt-4o"
-_PROMPTS_DIR = Path(__file__).parent
+_PROMPT_PATH = Path(__file__).parent / "extract_claims.txt"
+_VALID_SCOPE = "varkaar"
+
+# ChatML prompt format expected by Qwen2.5-Instruct (and compatible models).
+# If switching to a model with a different chat template, update this constant
+# only — no other changes required in this module. See NFR-002.
+_CHAT_TEMPLATE = (
+    "<|im_start|>system\n{system}\n<|im_end|>\n"
+    "<|im_start|>user\n{user}\n<|im_end|>\n"
+    "<|im_start|>assistant\n"
+)
+
+# Required top-level fields in a valid model response.
+_REQUIRED_FIELDS = {"chunk_id", "document_id", "claims"}
 
 
-def _load_prompt(filename: str) -> str:
-    """Read a prompt file from the prompts directory."""
-    return (_PROMPTS_DIR / filename).read_text(encoding="utf-8")
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
 
 
-def _get_client() -> OpenAI:
-    """Return an OpenAI client. Raises EnvironmentError if key is missing."""
-    key = os.getenv("OPENAI_API_KEY")
-    if not key:
-        raise EnvironmentError("OPENAI_API_KEY environment variable is not set")
-    return OpenAI(api_key=key)
+def _get_reviewed_dir() -> Path:
+    """Resolve and create REVIEWED_DIR from the environment."""
+    raw = os.environ.get("REVIEWED_DIR", "").strip()
+    if not raw:
+        raise EnvironmentError("REVIEWED_DIR is not set. Run 'source scripts/setenv.sh' first.")
+    path = Path(raw)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
-def _parse_extraction(data: dict) -> ExtractionRecord:
-    """Build an ExtractionRecord from a parsed JSON response dict."""
-    claims = [
-        ExtractionClaimRecord(
-            statement=c.get("statement", ""),
-            source_span=c.get("source_span", ""),
-            truth_status=c.get("truth_status", ""),
-            confidence=c.get("confidence") or None,
-        )
-        for c in data.get("claims", [])
-    ]
-    return ExtractionRecord(
-        chunk_id=data.get("chunk_id", ""),
-        document_id=data.get("document_id", ""),
-        title=data.get("title", ""),
-        summary=data.get("summary", ""),
-        era=data.get("era", ""),
-        canon_level=data.get("canon_level", ""),
-        truth_status=data.get("truth_status", ""),
-        region=data.get("region", []),
-        places=data.get("places", []),
-        characters=data.get("characters", []),
-        factions=data.get("factions", []),
-        key_events=data.get("key_events", []),
-        claims=claims,
-    )
+def _build_prompt(chunk: Chunk) -> str:
+    """Format the full ChatML prompt for a chunk."""
+    system = _PROMPT_PATH.read_text(encoding="utf-8")
+    chunk_id = f"chunk_{chunk.id:04d}"
+    document_id = f"doc_{chunk.document_id:03d}"
+    user = f"chunk_id: {chunk_id}\n" f"document_id: {document_id}\n\n" f"Passage:\n{chunk.text}"
+    return _CHAT_TEMPLATE.format(system=system, user=user)
 
 
-def extract_claims(
-    chunk_text: str,
-    chunk_id: str,
-    document_id: str,
-) -> ExtractionRecord | None:
+def _chunk_label(chunk: Chunk) -> str:
+    return f"chunk_{chunk.id:04d}"
+
+
+def _write_staging(out_dir: Path, chunk: Chunk, data: dict) -> Path:
+    """Write a successful extraction result to a staging JSON file.
+
+    Adds reviewed=false to every claim before writing (NFR staging requirement).
+    Returns the path written.
     """
-    Extract lore claims and entities from a raw chunk of text.
+    for claim in data.get("claims", []):
+        claim["reviewed"] = False
+    path = out_dir / f"{_chunk_label(chunk)}_extraction.json"
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
 
-    Sends the chunk to OpenAI using the extract_claims.txt system prompt.
-    The chunk_id and document_id are injected into the user message and
-    also enforced on the returned record, so they always match the caller.
+
+def _write_error(out_dir: Path, chunk: Chunk, raw: str, reason: str) -> Path:
+    """Write an error-flagged staging file for a failed extraction.
+
+    Returns the path written.
+    """
+    payload = {
+        "error": True,
+        "chunk_id": _chunk_label(chunk),
+        "reason": reason,
+        "raw": raw,
+    }
+    path = out_dir / f"{_chunk_label(chunk)}_extraction_error.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+def extract_chunk(chunk: Chunk, document: Document) -> Path | None:
+    """Extract claims from a chunk and write a staging JSON file.
+
+    Scope guard: if the document scope is not 'varkaar', logs a warning and
+    returns None without writing any file (ADR-006).
+
+    On success: writes <chunk_id>_extraction.json to REVIEWED_DIR.
+    On parse failure: writes <chunk_id>_extraction_error.json to REVIEWED_DIR.
+    In both non-skipped cases, returns the Path of the file written.
+
+    All claims in the staging file have reviewed=false. The reviewer sets
+    this to true in R4 before DB load.
 
     Args:
-        chunk_text:   verbatim chunk content (ChunkRecord.text)
-        chunk_id:     string identifier, e.g. "chunk_0042"
-        document_id:  string identifier, e.g. "doc_001"
+        chunk:    ORM Chunk record to extract from.
+        document: Parent Document record (used for scope check).
 
     Returns:
-        ExtractionRecord on success, None on API error or parse failure.
+        Path of the staging file written, or None if the chunk was skipped.
+
+    Raises:
+        EnvironmentError: If REVIEWED_DIR is not set.
+        RuntimeError:     Propagated from inference.complete() on empty response.
     """
-    system_prompt = _load_prompt("extract_claims.txt")
-    user_message = (
-        f"chunk_id: {chunk_id}\n" f"document_id: {document_id}\n\n" f"Passage:\n{chunk_text}"
-    )
-    try:
-        response = _get_client().chat.completions.create(
-            model=_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0.0,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
+    # Scope guard — ADR-006
+    if document.scope != _VALID_SCOPE:
+        log.warning(
+            "Skipping %s: document scope '%s' is not '%s'.",
+            _chunk_label(chunk),
+            document.scope,
+            _VALID_SCOPE,
         )
-        raw = response.choices[0].message.content or ""
-        data = json.loads(raw)
-        data["chunk_id"] = chunk_id
-        data["document_id"] = document_id
-        return _parse_extraction(data)
-    except json.JSONDecodeError as exc:
-        log.error("extract_claims: JSON parse error for %s: %s", chunk_id, exc)
-        return None
-    except Exception as exc:
-        log.error("extract_claims: API error for %s: %s", chunk_id, exc)
         return None
 
+    out_dir = _get_reviewed_dir()
+    prompt = _build_prompt(chunk)
 
-def structure_claims(
-    raw_text: str,
-    chunk_id: str = "",
-    document_id: str = "",
-) -> ExtractionRecord | None:
-    """
-    Convert raw or malformed extraction text into a structured ExtractionRecord.
+    log.info("Extracting %s (document_id=%d).", _chunk_label(chunk), chunk.document_id)
+    raw = complete(prompt, max_tokens=512, temperature=0.1)
 
-    Use this as a recovery step when extract_claims() returns None. The raw_text
-    argument should be whatever the model returned before the parse failure.
-
-    Args:
-        raw_text:    raw or malformed extraction output from a previous attempt
-        chunk_id:    string identifier to inject into the result (optional)
-        document_id: string identifier to inject into the result (optional)
-
-    Returns:
-        ExtractionRecord on success, None on API error or parse failure.
-    """
-    system_prompt = _load_prompt("structure_claims_metadata.txt")
+    # Parse JSON response
     try:
-        response = _get_client().chat.completions.create(
-            model=_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0.0,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": raw_text},
-            ],
-        )
-        raw = response.choices[0].message.content or ""
         data = json.loads(raw)
-        if chunk_id:
-            data["chunk_id"] = chunk_id
-        if document_id:
-            data["document_id"] = document_id
-        return _parse_extraction(data)
     except json.JSONDecodeError as exc:
-        log.error("structure_claims: JSON parse error: %s", exc)
-        return None
-    except Exception as exc:
-        log.error("structure_claims: API error: %s", exc)
-        return None
+        log.warning(
+            "%s: JSON parse failed — %s. Writing error file.",
+            _chunk_label(chunk),
+            exc,
+        )
+        return _write_error(out_dir, chunk, raw, f"JSON parse error: {exc}")
+
+    # Structural validation: required top-level fields must be present
+    missing = _REQUIRED_FIELDS - data.keys()
+    if missing:
+        reason = f"Missing required fields: {sorted(missing)}"
+        log.warning("%s: %s. Writing error file.", _chunk_label(chunk), reason)
+        return _write_error(out_dir, chunk, raw, reason)
+
+    out_path = _write_staging(out_dir, chunk, data)
+    log.info("%s: staging file written -> %s", _chunk_label(chunk), out_path)
+    return out_path

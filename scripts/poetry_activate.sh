@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# poetry_activate
+# poetry_activate.sh
 #
 # Convenience script for activating the current Poetry-managed virtualenv.
 # Instead of running the long command:
-#   poetry env activate $(poetry env info --path)/bin/activate
+#   source $(poetry env info --path)/bin/activate
 # you can just run:
-#   source tools/poetry_activate
+#   source scripts/poetry_activate.sh
 #
 # Notes:
-# - Must be sourced, not executed, so it changes your current shell’s environment.
-# - Equivalent to `poetry shell`, but uses Poetry’s official env activation path.
+# - Must be sourced, not executed, so it changes your current shell's environment.
+# - Equivalent to `poetry shell`, but uses Poetry's official env activation path.
 
 if ! command -v poetry >/dev/null 2>&1; then
   echo "Error: poetry not found in PATH" >&2

@@ -1,4 +1,4 @@
-# saskan_lore/tools/utils/shell.py
+# saskan_lore/utils/shell.py
 """Shell and system utilities: command execution, hashing, string helpers, system info."""
 
 from __future__ import annotations

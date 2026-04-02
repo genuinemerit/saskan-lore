@@ -70,7 +70,7 @@ Requires Python 3.12 and [Poetry](https://python-poetry.org/).
 
 ```bash
 poetry install              # install dependencies and create virtual environment
-source saskan_lore/tools/poetry_activate  # activate the environment
+source scripts/poetry_activate.sh  # activate the environment
 poetry run pytest           # run tests
 ```
 

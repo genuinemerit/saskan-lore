@@ -121,7 +121,7 @@ Thumbs.db
 
 # --- Runtime output dirs (generated at runtime, not versioned) ---
 /logs/
-/data/reviewed/
+/var/reviewed/
 
 # --- Alembic ---
 # Migration scripts in alembic/versions/ ARE committed — do not ignore them.

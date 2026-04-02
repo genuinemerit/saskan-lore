@@ -45,7 +45,7 @@ against both re-ingestion of the same path and re-ingestion of a renamed copy of
 same file.
 
 `content_hash` is a SHA-256 of the raw PDF bytes, computed via `get_sha256()` from
-`saskan_lore/tools/utils/shell.py` before calling `register_document`.
+`saskan_lore/utils/shell.py` before calling `register_document`.
 
 ```python
 def register_document(session, title, source_path, content_hash, scope="varkaar"):

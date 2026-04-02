@@ -1,4 +1,4 @@
-# saskan_lore/tools/utils/file_io.py
+# saskan_lore/utils/file_io.py
 """File I/O utilities for reading, writing, and managing files and directories."""
 
 from __future__ import annotations

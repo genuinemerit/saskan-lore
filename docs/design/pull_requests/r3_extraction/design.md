@@ -1,6 +1,6 @@
 # Release 3: Extraction Pipeline
 
-Status: **Pending R2**
+Status: **In Progress**
 
 ## Objective
 
@@ -11,11 +11,28 @@ single interface function.
 
 ---
 
+## Environment Setup Progress
+
+| Machine | OS | llama-cpp-python | Model | Status |
+| --- | --- | --- | --- | --- |
+| Apple M2 Pro | macOS (Metal) | Installed (Poetry) | Qwen2.5-7B-Instruct-Q4_K_M | Installed, verified ✓ |
+| Dell laptop | Ubuntu (CPU) | Installed (Poetry) | Qwen2.5-?B-Instruct-Q4_K_M | Installed (verify size) |
+
+Notes:
+
+- `LLAMA_N_GPU_LAYERS=-1` on Mac (all layers to Metal); `0` on Linux (CPU only)
+- Model files stored at `~/models/` on each machine — outside Dropbox. See ADR-008.
+- `setenv.sh` now auto-detects platform via `uname -s` and sets `LOCAL_MODEL_PATH`
+  and `LLAMA_N_GPU_LAYERS` after sourcing the env file. `env.example` updated to
+  document this. Model filenames are editable variables at the top of `setenv.sh`.
+
+---
+
 ## Deliverables
 
-- `saskan_lore/analyzer/inference.py` — model interface: single callable wrapping llama.cpp
+- `saskan_lore/analyzer/inference.py` — model interface: single callable wrapping llama.cpp ✓
 - `saskan_lore/analyzer/extractor.py` — formats prompt, calls inference, parses output,
-  writes staging JSON
+  writes staging JSON ✓
 - `saskan_lore/analyzer/staging.py` — utilities for reading/writing the `reviewed/` staging area
 - CLI command: `saskan-lore extract --chunk-id <id>` (or batch: `--document-id <id>`)
 - Staging output format matches `data/schema/extract_schema.json`
@@ -119,6 +136,50 @@ The prompt templates already include no-expansion instructions. Verify that
   file rather than crashing.
 - Test the scope guard: a chunk from a non-varkaar document is skipped.
 - Test that `reviewed` is always `false` in staging output, never `true`.
+
+---
+
+## Progress
+
+### Environment Setup
+
+- [x] `llama-cpp-python` installed via Poetry on both machines
+- [x] Qwen2.5-7B-Instruct-Q4_K_M.gguf downloaded to `~/models/` on Mac M2 Pro (verified)
+- [x] Qwen2.5-3B-Instruct-Q4_K_M.gguf downloaded to `~/models/` on Dell Linux (verify filename)
+- [x] `scripts/setenv.sh` updated — auto-detects platform, sets `LOCAL_MODEL_PATH` and
+  `LLAMA_N_GPU_LAYERS` (Darwin: gpu_layers=-1; Linux: gpu_layers=0)
+- [x] `saskan_lore/infra/config/env.example` updated to document platform-specific model config
+- [x] ADR-008 written — multi-environment configuration and platform-aware model selection
+
+### Implementation
+
+- [x] `saskan_lore/analyzer/inference.py` — `complete()`: env validation at import time,
+  model loaded once at module level, single public function, no llama_cpp types exported
+- [x] `saskan_lore/analyzer/extractor.py` — `extract_chunk()`: ChatML prompt formatting,
+  scope guard, JSON parse + structural validation, staging file write, error file on failure;
+  `reviewed=False` injected at write time
+- [x] `saskan_lore/analyzer/staging.py` — staging area read utilities: `list_staging()`,
+  `list_errors()`, `load_staging()`, `validate_staging()`, `load_for_document()`
+- [x] CLI command: `saskan-lore extract --chunk-id <id>` / `--document-id <id>` — added
+  to existing Typer app in `loader/ingest.py`; inference import deferred to avoid model
+  load on unrelated commands
+- [x] `saskan_lore/data/schema/extract_schema.json` — JSON Schema (draft 2020-12) for staging
+  file validation; derived from `ExtractionRecord` and `ExtractionClaimRecord` dataclasses;
+  enforces `reviewed=false` constraint, `truth_status` enum, `source_span` non-empty (NFR-003)
+
+### Testing
+
+- [x] `tests/unit/r3_extraction/test_r3_extraction.py` — 10/10 passing (TC-R3-01 through
+  TC-R3-10); `llama_cpp` mocked via `sys.modules` in `conftest.py`
+
+### Notes
+
+- `extractor.py` replaces the earlier OpenAI-based stub. The old stub used `gpt-4o` and
+  `response_format=json_object`; the new version calls `inference.complete()` only.
+- ChatML prompt template (`_CHAT_TEMPLATE`) is a single constant in `extractor.py`.
+  Switching models with a different chat format requires updating only that constant.
+- `extract_schema.json` was created from `ExtractionRecord` / `ExtractionClaimRecord`
+  dataclasses before tests were written, making the staging contract explicit up front.
 
 ---
 

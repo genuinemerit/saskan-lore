@@ -1,4 +1,4 @@
-# saskan_lore/tools/utils/stamps.py
+# saskan_lore/utils/stamps.py
 """Timestamp utilities (UTC only)."""
 
 from __future__ import annotations

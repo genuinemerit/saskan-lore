@@ -5,6 +5,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.3.0] - 2026-04-02 — R3 Extraction Pipeline
+
+### Added
+
+- `saskan_lore/analyzer/inference.py` — `complete()`: single public interface to local GGUF
+  model via llama.cpp; model loaded once at module level; env validation at import time;
+  `LOCAL_MODEL_PATH` and `LLAMA_N_GPU_LAYERS` read from environment
+- `saskan_lore/analyzer/extractor.py` — `extract_chunk()`: ChatML prompt formatting, scope
+  guard (ADR-006), JSON parse and structural validation, staging file write; malformed
+  responses saved as `_extraction_error.json`; `reviewed=False` injected at write time
+- `saskan_lore/analyzer/staging.py` — staging area read utilities: `list_staging()`,
+  `list_errors()`, `load_staging()`, `validate_staging()`, `load_for_document()`
+- `saskan_lore/data/schema/extract_schema.json` — JSON Schema (draft 2020-12) for staging
+  file validation; enforces `reviewed=false`, non-empty `source_span`, `truth_status` enum
+- `saskan-lore extract` CLI command added to `loader/ingest.py` Typer app; accepts
+  `--chunk-id` or `--document-id`; inference import deferred to avoid model load on
+  unrelated commands
+- `scripts/poetry_activate.sh` — activation helper (moved from `saskan_lore/tools/`)
+- `saskan_lore/utils/` — utility modules promoted from `saskan_lore/tools/utils/`
+  (`file_io.py`, `match_semver.py`, `platform.py`, `shell.py`, `stamps.py`)
+- `docs/architecture/decisions/adr_008.md` — multi-environment config and platform-aware
+  model selection (Darwin: Metal/gpu_layers=-1; Linux: CPU/gpu_layers=0)
+- `docs/design/pull_requests/r3_extraction/test_cases.md` — R3 test case register
+- `docs/guides/reference.md` — MagicMock and monkeypatch (pytest) glossary entries added
+- `docs/guides/workflows.md` — updated to reflect `var/` paths and R3 test structure
+
+### Changed
+
+- `saskan_lore/loader/ingest.py` — `add_completion=False` on Typer constructor (removes
+  `--install-completion` / `--show-completion` from help output)
+- `scripts/setenv.sh` — platform auto-detection sets `LOCAL_MODEL_PATH` and
+  `LLAMA_N_GPU_LAYERS` after sourcing env file; model filenames configurable at top of script
+- `saskan_lore/infra/config/env.example` — updated with platform-specific model config;
+  OpenAI section retained as documentation only
+- Root `data/` directory renamed to `var/` (runtime artifacts: DB, reviewed staging);
+  `saskan_lore/data/` (package assets: models, schema, lore texts) unchanged
+- `.gitignore` — `/data/reviewed/` entry updated to `/var/reviewed/`
+
+### Removed
+
+- `saskan_lore/tools/` — directory removed; utilities moved to `saskan_lore/utils/`
+- `saskan_lore/tools/poetry_activate` — replaced by `scripts/poetry_activate.sh`
+
+### Tests
+
+- `tests/unit/r3_extraction/test_r3_extraction.py` — 10 unit tests; all passing
+  (TC-R3-01 through TC-R3-10); `llama_cpp` mocked via `sys.modules` in conftest
+- Full suite: 30/30 passing
+
+---
+
 ## [0.2.0] - 2026-03-30 — R2 Ingestion Pipeline
 
 ### Added
@@ -84,7 +135,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `db_size()`
 - `saskan_lore/infra/db/init_db.py` — one-shot DB initialisation via `alembic upgrade head`
 - `alembic/` — Alembic configuration, initial schema migration, and FK constraint migration
-- `data/saskan_lore.db` — local SQLite DB (gitignored); created and validated in DBeaver
+- `var/saskan_lore.db` — local SQLite DB (gitignored); created and validated in DBeaver
 - `tests/conftest.py` — shared pytest fixture: in-memory SQLite, StaticPool, FK pragma ON
 - `tests/unit/r1_database/test_r1_db.py` — 10 unit tests covering schema structure, column
   defaults, nullability, unique constraints, FK enforcement, and full insert chain
@@ -117,6 +168,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Prompt templates: `analyzer/extract_claims.txt`, `analyzer/structure_claims_metadata.txt`
 - `analyzer/chunker.py` — sentence-aware, reproducible text chunker
 - `analyzer/extractor.py` — LLM-based claim extraction and structuring
-- Utility modules: `tools/utils/platform.py`, `tools/utils/stamps.py`,
-  `tools/utils/file_io.py`, `tools/utils/shell.py`, `tools/utils/match_semver.py`
+- Utility modules: `utils/platform.py`, `utils/stamps.py`,
+  `utils/file_io.py`, `utils/shell.py`, `utils/match_semver.py`
 - Six PDF lore source texts added to `data/lore_texts/`

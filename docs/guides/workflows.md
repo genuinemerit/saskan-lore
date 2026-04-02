@@ -3,8 +3,9 @@
 ## Pipeline
 
 ```text
-data/lore_texts/   →   analyzer/   →   prompts/   →   reviewed/   →   loader/   →   SQLite DB
-  (source PDFs)      (chunker)      (LLM extract)   (human review)   (DB load)
+saskan_lore/data/lore_texts/   →   analyzer/   →   var/reviewed/   →   loader/   →   SQLite DB
+       (source PDFs)              (chunk +          (human review)     (DB load)
+                                   extract)
 ```
 
 Record state per artifact:
@@ -81,7 +82,8 @@ tests/
   conftest.py          shared fixtures (db_session, etc.)
   unit/
     r1_database/       unit tests for R1 — DB models, schema, constraints
-    r2_ingestion/      unit tests for R2 (future)
+    r2_ingestion/      unit tests for R2 — document registration and chunking
+    r3_extraction/     unit tests for R3 — extraction, staging utilities
     ...                one subdirectory per feature release
   integration/         cross-release tests: pipeline flows, acceptance criteria
 ```
@@ -106,7 +108,8 @@ No `__init__.py` files are required in test directories.
 ### Running tests
 
 ```bash
-# Activate the venv first (once per shell session)
+# Activate the venv and load env vars (once per shell session)
+source scripts/poetry_activate.sh
 source scripts/setenv.sh local
 
 # Run all tests

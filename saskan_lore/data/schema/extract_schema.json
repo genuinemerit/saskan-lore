@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "extract_schema.json",
+  "title": "Extraction Staging Record",
+  "description": "Schema for a single chunk extraction staging file written to var/reviewed/. Derived from ExtractionRecord and ExtractionClaimRecord in database_schema.py. All claims have reviewed=false at this stage; the reviewer sets reviewed=true in R4 before DB load.",
+  "type": "object",
+  "required": ["chunk_id", "document_id", "title", "summary", "era", "canon_level", "truth_status", "region", "places", "characters", "factions", "key_events", "claims"],
+  "additionalProperties": false,
+  "properties": {
+    "chunk_id": {
+      "type": "string",
+      "description": "Chunk identifier, e.g. 'chunk_0042'.",
+      "pattern": "^chunk_[0-9]{4}$"
+    },
+    "document_id": {
+      "type": "string",
+      "description": "Document identifier, e.g. 'doc_001'.",
+      "pattern": "^doc_[0-9]{3}$"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short descriptive title for this passage."
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-sentence summary of the passage content."
+    },
+    "era": {
+      "type": "string",
+      "description": "Era name if stated in the source text; empty string if not determinable."
+    },
+    "canon_level": {
+      "type": "string",
+      "description": "Source reliability classification.",
+      "enum": ["canonical", "apocryphal", "disputed", ""]
+    },
+    "truth_status": {
+      "type": "string",
+      "description": "Overall epistemic status of the source passage.",
+      "enum": ["fact", "belief", "interpretation", "rumor", ""]
+    },
+    "region": {
+      "type": "array",
+      "description": "Geographic regions mentioned in the passage.",
+      "items": {"type": "string"}
+    },
+    "places": {
+      "type": "array",
+      "description": "Place entity names (resolved to EntityRecord type='place' on DB load).",
+      "items": {"type": "string"}
+    },
+    "characters": {
+      "type": "array",
+      "description": "Character entity names (resolved to EntityRecord type='person' on DB load).",
+      "items": {"type": "string"}
+    },
+    "factions": {
+      "type": "array",
+      "description": "Faction entity names (resolved to EntityRecord type='faction' on DB load).",
+      "items": {"type": "string"}
+    },
+    "key_events": {
+      "type": "array",
+      "description": "Event entity names (resolved to EntityRecord type='event' on DB load).",
+      "items": {"type": "string"}
+    },
+    "claims": {
+      "type": "array",
+      "description": "Extracted claims. Each claim must have a verbatim source span (NFR-003).",
+      "items": {
+        "type": "object",
+        "required": ["statement", "source_span", "truth_status", "reviewed"],
+        "additionalProperties": false,
+        "properties": {
+          "statement": {
+            "type": "string",
+            "description": "The extracted claim restated in clean prose. Maps to ClaimRecord.claim_text on DB load."
+          },
+          "source_span": {
+            "type": "string",
+            "description": "Verbatim quote from the source passage supporting this claim. Must not be empty (NFR-003).",
+            "minLength": 1
+          },
+          "truth_status": {
+            "type": "string",
+            "description": "Epistemic status of this claim (ADR-004).",
+            "enum": ["fact", "belief", "interpretation", "rumor"]
+          },
+          "confidence": {
+            "type": ["string", "null"],
+            "description": "Extraction confidence. Maps to ClaimRecord.confidence on DB load.",
+            "enum": ["high", "medium", "low", null]
+          },
+          "reviewed": {
+            "type": "boolean",
+            "description": "Always false in staging. Set to true by the reviewer in R4.",
+            "const": false
+          }
+        }
+      }
+    }
+  }
+}
