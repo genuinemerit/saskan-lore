@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "saskan-lore"
-version = "0.4.0"
+version = "0.5.0"
 description = "Saskan Lands Lore Assistant."
 license = "MIT"
 authors = ["Genuine Merit Software <genuinemerit@pm.me>"]
