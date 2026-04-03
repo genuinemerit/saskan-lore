@@ -131,7 +131,7 @@ load run but does not write it to any table.
 
 ### Housekeeping
 
-- [x] `ExtractionClaimRecord.statement` renamed to `claim_text` in `database_schema.py`,
+- [x] `ExtractionClaimRecord.statement` renamed to `claim_text` in `data_schema.py`,
   `extract_schema.json`, and `tests/unit/r3_extraction/test_r3_extraction.py` — aligns
   staging field names with DB column names
 - [x] `docs/design/pull_requests/` directory removed; all release design docs lifted to

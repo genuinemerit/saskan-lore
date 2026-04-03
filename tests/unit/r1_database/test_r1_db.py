@@ -76,7 +76,7 @@ def _entity(session, *, name="Varkaar", kind="faction"):
 
 
 def test_all_tables_present(db_session):
-    """Schema contains exactly the expected 9 tables after create_all."""
+    """Schema contains the expected 9 ORM tables plus the claims_fts virtual table."""
     inspector = sa_inspect(db_session.bind)
     tables = set(inspector.get_table_names())
     expected = {
@@ -89,6 +89,12 @@ def test_all_tables_present(db_session):
         "relationships",
         "eval_questions",
         "eval_results",
+        # FTS5 virtual table (R5) and its SQLite shadow tables
+        "claims_fts",
+        "claims_fts_config",
+        "claims_fts_data",
+        "claims_fts_docsize",
+        "claims_fts_idx",
     }
     assert tables == expected
 

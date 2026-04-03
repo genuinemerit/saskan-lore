@@ -78,11 +78,11 @@ def _chunk_label(chunk: Chunk) -> str:
 def _write_staging(out_dir: Path, chunk: Chunk, data: dict) -> Path:
     """Write a successful extraction result to a staging JSON file.
 
-    Adds reviewed=false to every claim before writing (NFR staging requirement).
+    Sets review_status='pending' on every claim before writing (NFR staging requirement).
     Returns the path written.
     """
     for claim in data.get("claims", []):
-        claim["reviewed"] = False
+        claim["review_status"] = "pending"
     path = out_dir / f"{_chunk_label(chunk)}_extraction.json"
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return path
@@ -119,8 +119,8 @@ def extract_chunk(chunk: Chunk, document: Document) -> Path | None:
     On parse failure: writes <chunk_id>_extraction_error.json to REVIEWED_DIR.
     In both non-skipped cases, returns the Path of the file written.
 
-    All claims in the staging file have reviewed=false. The reviewer sets
-    this to true in R4 before DB load.
+    All claims in the staging file have review_status='pending'. The reviewer
+    sets this to 'approved' or 'rejected' in R4 before DB load.
 
     Args:
         chunk:    ORM Chunk record to extract from.

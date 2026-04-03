@@ -32,7 +32,7 @@ from saskan_lore.data.models import Chunk, Document
 # Fixture response strings
 # ---------------------------------------------------------------------------
 
-# Valid model response — no 'reviewed' field (extractor injects it).
+# Valid model response — no 'review_status' field (extractor injects it).
 _GOOD_RESPONSE = json.dumps(
     {
         "chunk_id": "chunk_0001",
@@ -60,7 +60,7 @@ _GOOD_RESPONSE = json.dumps(
     }
 )
 
-# Model response where a claim incorrectly includes reviewed=True.
+# Model response where a claim incorrectly includes review_status='approved'.
 _REVIEWED_TRUE_RESPONSE = json.dumps(
     {
         "chunk_id": "chunk_0001",
@@ -81,7 +81,7 @@ _REVIEWED_TRUE_RESPONSE = json.dumps(
                 "source_span": "A verbatim quote.",
                 "truth_status": "fact",
                 "confidence": "high",
-                "reviewed": True,
+                "review_status": "approved",
             }
         ],
     }
@@ -173,12 +173,14 @@ def test_extract_chunk_success(monkeypatch, varkaar_chunk, varkaar_doc, reviewed
 
 
 # ---------------------------------------------------------------------------
-# TC-R3-02  extract_chunk: reviewed=False enforced at write time
+# TC-R3-02  extract_chunk: review_status='pending' enforced at write time
 # ---------------------------------------------------------------------------
 
 
-def test_extract_chunk_reviewed_always_false(monkeypatch, varkaar_chunk, varkaar_doc, reviewed_dir):
-    """reviewed=False is injected even when the model response includes reviewed=True."""
+def test_extract_chunk_review_status_always_pending(
+    monkeypatch, varkaar_chunk, varkaar_doc, reviewed_dir
+):
+    """review_status='pending' is injected even when the model response includes review_status='approved'."""
     monkeypatch.setenv("REVIEWED_DIR", str(reviewed_dir))
     with patch("saskan_lore.analyzer.extractor.complete", return_value=_REVIEWED_TRUE_RESPONSE):
         out = extract_chunk(varkaar_chunk, varkaar_doc)
@@ -186,7 +188,7 @@ def test_extract_chunk_reviewed_always_false(monkeypatch, varkaar_chunk, varkaar
     assert out is not None
     data = json.loads(out.read_text())
     for claim in data["claims"]:
-        assert claim["reviewed"] is False
+        assert claim["review_status"] == "pending"
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +292,7 @@ def test_list_errors_only(reviewed_dir):
 def test_validate_staging_valid():
     """validate_staging() returns an empty list for a well-formed staging record."""
     record = json.loads(_GOOD_RESPONSE)
-    record["claims"][0]["reviewed"] = False
+    record["claims"][0]["review_status"] = "pending"
 
     errors = validate_staging(record)
     assert errors == []
@@ -321,7 +323,7 @@ def test_validate_staging_invalid():
                 "claim_text": "A claim.",
                 # source_span missing — violates NFR-003 and schema minLength:1
                 "truth_status": "fact",
-                "reviewed": False,
+                "review_status": "pending",
             }
         ],
     }
@@ -337,7 +339,7 @@ def test_validate_staging_invalid():
 def test_load_for_document(reviewed_dir):
     """load_for_document() returns only valid records matching the document_id."""
     good_record = json.loads(_GOOD_RESPONSE)
-    good_record["claims"][0]["reviewed"] = False
+    good_record["claims"][0]["review_status"] = "pending"
 
     # Matching valid record
     (reviewed_dir / "chunk_0001_extraction.json").write_text(json.dumps(good_record))

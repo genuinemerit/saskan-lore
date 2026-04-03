@@ -55,7 +55,7 @@ _APPROVED_CLAIM = {
     "source_span": "The Covenant governed the northern provinces.",
     "truth_status": "fact",
     "confidence": "high",
-    "reviewed": True,
+    "review_status": "approved",
 }
 
 # ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ def test_load_entities_idempotent(db_session, varkaar_chunk, varkaar_doc):
 
 
 def test_load_file_approved_claim_inserted(db_session, staging_path):
-    """A claim with reviewed=True is inserted with status='approved'."""
+    """A claim with review_status='approved' is inserted with status='approved'."""
     summary = load_file(db_session, staging_path)
 
     assert summary["claims_loaded"] == 1
@@ -163,12 +163,10 @@ def test_load_file_approved_claim_inserted(db_session, staging_path):
 
 
 def test_load_file_unreviewed_claim_skipped(db_session, tmp_path, varkaar_chunk, varkaar_doc):
-    """A claim with reviewed=False and no rejected status is not inserted."""
-    unreviewed = {**_APPROVED_CLAIM, "reviewed": False}
-    del unreviewed["reviewed"]  # ensure key is absent, not just False
-    unreviewed["reviewed"] = False
+    """A claim with review_status='pending' is not inserted."""
+    pending = {**_APPROVED_CLAIM, "review_status": "pending"}
 
-    data = _make_staging(varkaar_chunk.id, varkaar_doc.id, [unreviewed])
+    data = _make_staging(varkaar_chunk.id, varkaar_doc.id, [pending])
     p = tmp_path / "chunk_unreviewed.json"
     p.write_text(json.dumps(data))
 
@@ -190,8 +188,7 @@ def test_load_file_rejected_claim_inserted(db_session, tmp_path, varkaar_chunk, 
         "claim_text": "An invented detail.",
         "source_span": "The Covenant governed the northern provinces.",
         "truth_status": "fact",
-        "reviewed": False,
-        "status": "rejected",
+        "review_status": "rejected",
         "reject_reason": "hallucinated",
     }
     data = _make_staging(varkaar_chunk.id, varkaar_doc.id, [rejected])
@@ -218,7 +215,7 @@ def test_load_file_invalid_claim_skipped(db_session, tmp_path, varkaar_chunk, va
         "claim_text": "The Covenant governed oath law.",
         "source_span": "",
         "truth_status": "fact",
-        "reviewed": True,
+        "review_status": "approved",
     }
     data = _make_staging(varkaar_chunk.id, varkaar_doc.id, [invalid])
     p = tmp_path / "chunk_invalid.json"
@@ -280,17 +277,17 @@ def test_load_relationships_unknown_entity_skipped(db_session):
 
 
 # ---------------------------------------------------------------------------
-# TC-R4-10  review_file: approve action writes reviewed=True to JSON
+# TC-R4-10  review_file: approve action writes review_status='approved' to JSON
 # ---------------------------------------------------------------------------
 
 
-def test_review_file_approve_writes_reviewed_true(tmp_path):
-    """Approve action sets reviewed=True on the claim and writes back to disk."""
+def test_review_file_approve_writes_review_status_approved(tmp_path):
+    """Approve action sets review_status='approved' on the claim and writes back to disk."""
     claim = {
         "claim_text": "The Covenant governed oath law.",
         "source_span": "The Covenant governed the northern provinces.",
         "truth_status": "fact",
-        "reviewed": False,
+        "review_status": "pending",
     }
     data = {
         "chunk_id": "chunk_0001",
@@ -305,4 +302,4 @@ def test_review_file_approve_writes_reviewed_true(tmp_path):
 
     assert counts["approved"] == 1
     written = json.loads(p.read_text())
-    assert written["claims"][0]["reviewed"] is True
+    assert written["claims"][0]["review_status"] == "approved"

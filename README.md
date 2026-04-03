@@ -71,15 +71,16 @@ This is a pre-pilot learning project. Releases follow a defined dependency chain
 | R1 | Database | Complete |
 | R2 | Ingestion | Complete |
 | R3 | Extraction | Complete |
-| R4 | Review and Load | In Progress |
-| R5 | Retrieval | Planned |
+| R4 | Review and Load | Complete |
+| R5 | Retrieval | Complete |
 | R6 | Evaluation | Planned |
 
-Current version: v0.3.0
+Current version: v0.4.0
 
-The extraction pipeline (R3) is complete. The local model reads lore text chunks and
-produces structured JSON files with claims, entities, and source spans. R4 adds the
-human review step and loads approved records into the database.
+Stages R1 through R5 are complete. The pipeline now covers the full path from PDF source
+texts to natural-language answers grounded in reviewed lore claims. R4 added human review
+and database load. R5 added full-text search (FTS5) retrieval and grounded answering via
+the local model.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and [`docs/design/`](docs/design/) for details.
 
@@ -92,7 +93,7 @@ Requires Python 3.12 and [Poetry](https://python-poetry.org/).
 ```bash
 poetry install                     # install dependencies
 source scripts/poetry_activate.sh  # activate the environment
-source scripts/setenv.sh           # set LOCAL_MODEL_PATH and LLAMA_N_GPU_LAYERS
+source scripts/setenv.sh local     # set LOCAL_MODEL_PATH and LLAMA_N_GPU_LAYERS
 poetry run pytest                  # run tests
 ```
 

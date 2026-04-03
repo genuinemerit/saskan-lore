@@ -10,7 +10,7 @@ from __future__ import annotations
 import sqlite3
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -38,6 +38,20 @@ def db_session():
             dbapi_conn.execute("PRAGMA foreign_keys=ON")
 
     Base.metadata.create_all(engine)
+
+    # Create the FTS5 virtual table — not an ORM model, so not covered by
+    # create_all(). Mirrors alembic/versions/c2d4a8f3e610_add_claims_fts.py.
+    with engine.connect() as conn:
+        conn.execute(text("""
+                CREATE VIRTUAL TABLE claims_fts
+                USING fts5(
+                    claim_text,
+                    content='claims',
+                    content_rowid='id'
+                )
+                """))
+        conn.commit()
+
     Session = sessionmaker(bind=engine)
     session = Session()
     yield session

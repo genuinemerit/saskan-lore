@@ -25,8 +25,8 @@ Validation is skip-and-log: records failing validation are counted and reported
 in the summary, not raised as fatal errors.
 
 Note: validate_staging() (R3 extractor output check) is not used here. Post-review
-staging files may have reviewed=true, status, and reject_reason fields that would
-fail that schema. The loader validates fields directly in code. See R4 design doc.
+staging files have review_status='approved'/'rejected' (and optional reject_reason)
+which would fail that schema. The loader validates fields directly in code. See R4 design doc.
 
 See: R4 design doc, FR-003, FR-004, FR-005, NFR-003, NFR-004.
 """
@@ -38,6 +38,7 @@ import logging
 from pathlib import Path
 
 import typer
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from saskan_lore.data.models import Chunk, Claim, ClaimEntity
@@ -89,8 +90,8 @@ def _load_claims(
 ) -> tuple[list[tuple[int, str]], int, int]:
     """Insert Claim records from a list of staging claim dicts.
 
-    Processes approved (reviewed=true) and rejected (status='rejected') claims.
-    Unreviewed claims (neither flag set) are skipped with a warning.
+    Processes approved (review_status='approved') and rejected (review_status='rejected')
+    claims. Pending claims (review_status='pending' or absent) are skipped with a warning.
 
     Idempotence key: (chunk_id, claim_text).
 
@@ -110,12 +111,12 @@ def _load_claims(
     rejected = 0
 
     for claim in claims:
-        is_approved = claim.get("reviewed") is True
-        is_rejected = claim.get("status") == "rejected"
+        is_approved = claim.get("review_status") == "approved"
+        is_rejected = claim.get("review_status") == "rejected"
 
         if not is_approved and not is_rejected:
             log.warning(
-                "load_claims: claim not yet reviewed — skipped. " "text: %.60r",
+                "load_claims: claim review_status is pending — skipped. " "text: %.60r",
                 claim.get("claim_text", ""),
             )
             skipped += 1
@@ -255,6 +256,10 @@ def load_file(session: Session, path: Path) -> dict:
     # 5. Relationships — no-op for current staging format
     load_relationships(session, [], entity_map)
 
+    session.commit()
+
+    # 6. Rebuild FTS5 index so new claims are immediately searchable
+    session.execute(text("INSERT INTO claims_fts(claims_fts) VALUES('rebuild')"))
     session.commit()
 
     return {

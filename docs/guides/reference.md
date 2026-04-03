@@ -9,7 +9,9 @@ Terms, acronyms, and concepts used in this project.
 - [Alembic](#alembic)
 - [Chunk](#chunk)
 - [Claim](#claim)
+- [Cosine Similarity](#cosine-similarity)
 - [Document](#document)
+- [FTS5 (SQLite Full-Text Search)](#fts5-sqlite-full-text-search)
 - [GGUF](#gguf)
 - [Llama 3](#llama-3)
 - [LLM (Large Language Model)](#llm-large-language-model)
@@ -112,6 +114,27 @@ Ashen Era."
 
 ---
 
+## Cosine Similarity
+
+A way to measure how similar two vectors are. The result is a number between -1 and 1.
+A result close to 1 means the vectors point in almost the same direction — the texts are
+similar in meaning. A result close to 0 means they are unrelated.
+
+In a retrieval-augmented system, text is converted to a numerical vector (an *embedding*)
+by a model. A query is also converted to a vector. Cosine similarity is then used to find
+the stored vectors that are closest to the query vector — these are the most relevant
+passages.
+
+This is the main alternative to keyword search (FTS5). Keyword search finds passages that
+share the same words as the query. Cosine similarity finds passages that share the same
+*meaning*, even if they use different words.
+
+**In this project:** the MVP uses [FTS5](#fts5-sqlite-full-text-search) keyword search
+because it requires no embedding model and no vector storage. Embedding-based retrieval
+using cosine similarity is a future option, tracked in the backlog as BL-009.
+
+---
+
 ## Claim
 
 A discrete, source-quoted fact extracted from a Chunk. Claims are the primary unit of meaning
@@ -127,6 +150,84 @@ source_span = "...oath-breakers were put to death by the Covenant..."
 A narrative source text. Stored under `data/lore_texts/`. The starting point of the pipeline.
 
 Example: `SaskanCanon-VarkaarCovenant.pdf`
+
+---
+
+## FTS5 (SQLite Full-Text Search)
+
+SQLite FTS5 is the built-in full-text search extension shipped with SQLite 3.9+. It enables
+efficient keyword and phrase search over text columns without scanning every row.
+
+**How it works:**
+
+FTS5 creates a *virtual table* — a special table whose storage and query logic is handled by
+the extension rather than SQLite's standard B-tree engine. The virtual table maintains an
+inverted index: for each token (word) it records which rows contain it, enabling fast lookups
+regardless of table size.
+
+**Content tables:**
+
+Rather than copying data into the virtual table, FTS5 supports a *content table* mode: the
+virtual table indexes text from an existing table and stores only the index, not the content.
+Queries return rowids that are joined back to the source table to fetch the actual data.
+
+```sql
+-- Create a content virtual table backed by the claims table
+CREATE VIRTUAL TABLE claims_fts USING fts5(
+    claim_text,
+    content='claims',
+    content_rowid='id'
+);
+
+-- Populate the index from existing rows
+INSERT INTO claims_fts(claims_fts) VALUES('rebuild');
+
+-- Query: returns rowids of matching claims, ranked by BM25 relevance
+SELECT rowid, rank
+FROM claims_fts
+WHERE claims_fts MATCH 'oath covenant'
+ORDER BY rank
+LIMIT 5;
+```
+
+**BM25 ranking:**
+
+FTS5 exposes a `rank` column that returns the BM25 score for each match. BM25
+(Best Match 25) is a standard information retrieval ranking function that weighs term
+frequency against document length. Lower (more negative) rank values indicate stronger
+matches. Sort `ORDER BY rank` to get the best results first.
+
+In practice: a claim that contains the query term many times in a short text scores
+lower (stronger) than one that mentions it once in passing. For example, a claim
+whose entire text is about oath law will rank higher for the query `"oath"` than a
+long claim that happens to mention it in a subordinate clause.
+
+In this project, `bm25_rank` is stored on each `RetrievalHit` and logged for
+inspection, but is not shown to the user — it is used only for ordering results.
+A typical strong match in a small lore database will produce values in the range
+of roughly -1 to -5; the exact scale depends on corpus size and term distribution.
+
+**MATCH syntax:**
+
+| Pattern | Meaning |
+| --- | --- |
+| `'oath'` | rows containing the token `oath` |
+| `'oath covenant'` | rows containing both tokens (implicit AND) |
+| `'oath OR covenant'` | rows containing either token |
+| `'"oath breaker"'` | exact phrase match |
+| `'oath*'` | prefix match (rows with tokens starting with `oath`) |
+
+**In this project:**
+
+FTS5 is used in R5 to search `claims.claim_text`. A `claims_fts` content virtual table is
+created via an Alembic migration. At query time, `retrieval.py` issues a `MATCH` query
+against `claims_fts`, joins the result rowids to the `claims` table (to filter
+`reviewed=True` and fetch metadata), and returns the top N hits ranked by BM25.
+
+Content tables require a manual `rebuild` after bulk inserts (e.g. after loading a batch of
+reviewed staging files). This rebuild is triggered by the loader after each successful load.
+
+See also: [sqlite.org/fts5.html](https://www.sqlite.org/fts5.html)
 
 ---
 

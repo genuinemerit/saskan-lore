@@ -15,12 +15,13 @@ Public functions:
         Print a formatted review session summary.
 
 Review actions per claim:
-    A — Approve:  sets reviewed=true.
+    A — Approve:  sets review_status='approved'.
     C — Correct:  leaves the claim unchanged; reviewer edits the JSON and re-runs.
-    R — Reject:   sets status="rejected"; prompts for an optional reject_reason.
+    R — Reject:   sets review_status='rejected'; prompts for an optional reject_reason.
     Q — Quit:     ends the session early; partial state is written back.
 
-Claims already marked reviewed=true or status="rejected" are skipped automatically.
+Claims already marked review_status='approved' or review_status='rejected' are skipped
+automatically.
 
 reject_reason is a staging-only field. It is not written to the database; the loader
 logs it during a load run for the reviewer's benefit.
@@ -42,7 +43,7 @@ import typer
 
 def _is_decided(claim: dict) -> bool:
     """Return True if a claim has already been approved or rejected."""
-    return claim.get("reviewed") is True or claim.get("status") == "rejected"
+    return claim.get("review_status") in ("approved", "rejected")
 
 
 def _display_claim(index: int, total: int, claim: dict) -> None:
@@ -81,8 +82,8 @@ def _prompt_reason() -> str:
 def review_file(path: Path) -> dict:
     """Present pending claims in a staging file for approve / correct / reject.
 
-    Iterates over claims that have not yet been decided (reviewed != True and
-    status != "rejected"). Writes the updated JSON back to the same file on
+    Iterates over claims that have not yet been decided (review_status == 'pending'
+    or review_status absent). Writes the updated JSON back to the same file on
     completion or interrupt so that partial state is never lost.
 
     Args:
@@ -127,7 +128,7 @@ def review_file(path: Path) -> dict:
             action = _prompt_action()
 
             if action == "A":
-                claim["reviewed"] = True
+                claim["review_status"] = "approved"
                 counts["approved"] += 1
 
             elif action == "C":
@@ -138,7 +139,7 @@ def review_file(path: Path) -> dict:
 
             elif action == "R":
                 reason = _prompt_reason()
-                claim["status"] = "rejected"
+                claim["review_status"] = "rejected"
                 if reason:
                     claim["reject_reason"] = reason
                 counts["rejected"] += 1

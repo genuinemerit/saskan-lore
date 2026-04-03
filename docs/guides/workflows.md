@@ -69,7 +69,9 @@ Record state per artifact:
 | **Output** | retrieved evidence, generated answer, result record |
 | **Acceptance** | answer includes supporting evidence; pass/fail recorded; notes allow failure analysis |
 
-**Retrieval approach (MVP):** keyword search, or embedding + cosine similarity in Python. Return top 3 chunks with associated claims. No vector DB.
+**Retrieval approach (MVP):** SQLite FTS5 full-text search over approved claims, ranked by BM25.
+Returns top N claims as context for the model. Embedding-based retrieval is deferred to a later
+release.
 
 ---
 
@@ -84,7 +86,8 @@ tests/
     r1_database/       unit tests for R1 — DB models, schema, constraints
     r2_ingestion/      unit tests for R2 — document registration and chunking
     r3_extraction/     unit tests for R3 — extraction, staging utilities
-    ...                one subdirectory per feature release
+    r4_review_load/    unit tests for R4 — review, load, entity and claim loading
+    r5_retrieval/      unit tests for R5 — FTS5 retrieval, context formatting, answering
   integration/         cross-release tests: pipeline flows, acceptance criteria
 ```
 

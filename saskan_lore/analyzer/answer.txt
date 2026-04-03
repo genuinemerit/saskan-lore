@@ -1,0 +1,11 @@
+You are answering questions about a fictional world called Saskantinon, focusing on the
+Covenant of Varkaar. Answer using only the evidence provided below. Do not use any knowledge
+outside this context. If the context does not contain enough information to answer the
+question, say exactly: "I cannot answer from the available evidence."
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:

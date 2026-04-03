@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-database_schema.py
+data_schema.py
 
-Canonical schema definitions for the saskan_lore database, plus staging
-dataclasses for LLM extraction output.
+Canonical schema definitions for the saskan_lore data layer, including DB
+tables, staging dataclasses for LLM extraction output, and query result
+types used by the retrieval and answering pipeline.
 
 Each class is a frozen dataclass. DB table classes serve as the authoritative
 field-level reference for the SQLAlchemy models built in Release 1. Staging
@@ -24,6 +25,11 @@ DB table inventory:
 Staging (LLM extraction output, not DB tables):
     ExtractionClaimRecord  -- a single claim within an extraction result
     ExtractionRecord       -- full LLM extraction output for one chunk
+
+Query result types (retrieval and answering pipeline, R5):
+    RetrievalHit   -- one FTS5 search result returned by retrieval.retrieve()
+    AnswerResult   -- final result returned by answering.answer(), including
+                     the model response text and the supporting evidence list
 
 See: ADR-002 (SQLite + SQLAlchemy), ADR-003 (claims as first-class),
      ADR-004 (truth-status), ADR-005 (relationships), FR-001 through FR-008.
@@ -262,6 +268,8 @@ class ExtractionClaimRecord:
     source_span: str  # verbatim quote from source
     truth_status: str  # fact | belief | interpretation | rumor
     confidence: str | None = field(default=None)  # high | medium | low
+    review_status: str = field(default="pending")  # pending | approved | rejected
+    reject_reason: str | None = field(default=None)  # optional reviewer note on rejection
 
 
 @dataclass(frozen=True)
@@ -293,3 +301,51 @@ class ExtractionRecord:
     factions: list[str]  # faction entity names (-> EntityRecord, type="faction")
     key_events: list[str]  # event entity names (-> EntityRecord, type="event")
     claims: list[ExtractionClaimRecord]
+
+
+# ---------------------------------------------------------------------------
+# Retrieval and answering structures -- R5 query pipeline
+# Used by retrieval.py and answering.py; never written to staging or DB.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class RetrievalHit:
+    """
+    A single result returned by retrieval.retrieve().
+
+    Carries all fields needed to format the LLM context block and to
+    display evidence to the user in the CLI output.
+
+    claim_id:       Primary key of the matching Claim row.
+    claim_text:     The claim text that matched the query.
+    source_span:    Verbatim quote from the source passage (NFR-003).
+    truth_status:   Epistemic status: fact | belief | interpretation | rumor.
+    document_title: Title of the source Document.
+    chunk_sequence: Sequence number of the parent Chunk within its Document.
+    bm25_rank:      BM25 score from FTS5 (lower/more-negative = stronger match).
+    """
+
+    claim_id: int
+    claim_text: str
+    source_span: str
+    truth_status: str
+    document_title: str
+    chunk_sequence: int
+    bm25_rank: float
+
+
+@dataclass(frozen=True)
+class AnswerResult:
+    """
+    The result returned by answering.answer().
+
+    answerable: False if retrieve() returned no hits; model is not called.
+    answer:     Model response text, or None when answerable=False.
+    evidence:   List of claim_ids from the RetrievalHits used as context.
+                Always empty when answerable=False.
+    """
+
+    answerable: bool
+    answer: str | None
+    evidence: list[int]

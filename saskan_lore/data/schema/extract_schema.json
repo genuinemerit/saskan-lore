@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "extract_schema.json",
   "title": "Extraction Staging Record",
-  "description": "Schema for extractor output only — staging files as written by extractor.py to var/reviewed/. Derived from ExtractionRecord and ExtractionClaimRecord in database_schema.py. All claims have reviewed=false at this stage. Post-review files (with reviewed=true, status, or reject_reason fields) are not validated against this schema; the R4 loader performs its own field-level validation.",
+  "description": "Schema for extractor output only — staging files as written by extractor.py to var/reviewed/. Derived from ExtractionRecord and ExtractionClaimRecord in data_schema.py. All claims have review_status='pending' at this stage. Post-review files (with review_status='approved'/'rejected' and optional reject_reason) are not validated against this schema; the R4 loader performs its own field-level validation.",
   "type": "object",
   "required": ["chunk_id", "document_id", "title", "summary", "era", "canon_level", "truth_status", "region", "places", "characters", "factions", "key_events", "claims"],
   "additionalProperties": false,
@@ -69,7 +69,7 @@
       "description": "Extracted claims. Each claim must have a verbatim source span (NFR-003).",
       "items": {
         "type": "object",
-        "required": ["claim_text", "source_span", "truth_status", "reviewed"],
+        "required": ["claim_text", "source_span", "truth_status", "review_status"],
         "additionalProperties": false,
         "properties": {
           "claim_text": {
@@ -91,10 +91,10 @@
             "description": "Extraction confidence. Maps to ClaimRecord.confidence on DB load.",
             "enum": ["high", "medium", "low", null]
           },
-          "reviewed": {
-            "type": "boolean",
-            "description": "Always false in staging. Set to true by the reviewer in R4.",
-            "const": false
+          "review_status": {
+            "type": "string",
+            "description": "Review state of this claim. Always 'pending' in extractor output. Set to 'approved' or 'rejected' by the reviewer in R4.",
+            "const": "pending"
           }
         }
       }

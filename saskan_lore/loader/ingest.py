@@ -7,6 +7,7 @@ Commands:
     extract -- run lore extraction on one chunk or all chunks for a document (R3)
     review  -- interactively review claims in a staging file (R4)
     load    -- load a reviewed staging file into the database (R4)
+    ask     -- answer a natural-language question from retrieved lore claims (R5)
 
 CLI entry point (pyproject.toml):
     [tool.poetry.scripts]
@@ -279,12 +280,12 @@ def review(
 ) -> None:
     """Interactively review claims in a staging file.
 
-    Presents each unreviewed claim with its claim_text, source_span, and
+    Presents each pending claim with its claim_text, source_span, and
     truth_status, then prompts for Approve / Correct / Reject / Quit.
 
-    Approved claims are marked reviewed=true. Rejected claims are marked
-    status=rejected with an optional reason. Claims marked for correction
-    are left unchanged for direct JSON editing and a subsequent re-run.
+    Approved claims are marked review_status='approved'. Rejected claims are
+    marked review_status='rejected' with an optional reason. Claims marked for
+    correction are left unchanged for direct JSON editing and a subsequent re-run.
 
     Partial state is written back if the session ends early (Q or Ctrl-C).
     Already-decided claims are skipped automatically.
@@ -327,10 +328,10 @@ def load(
     """Load a reviewed staging file into the database.
 
     Runs the full load sequence in dependency order: entities, claims,
-    claim-entity links, and relationships. Only claims marked reviewed=true
-    are inserted as approved. Claims marked status=rejected are inserted
-    with that status to preserve the audit trail. Unreviewed claims are
-    skipped.
+    claim-entity links, and relationships. Only claims marked
+    review_status='approved' are inserted as approved. Claims marked
+    review_status='rejected' are inserted with that status to preserve the
+    audit trail. Pending claims are skipped.
 
     The load is idempotent: re-running on the same file produces no
     duplicate records.
@@ -365,6 +366,68 @@ def load(
 
     print_load_summary(summary)
     log.info("Load complete", extra={"path": staging_file, **summary})
+
+
+@app.command()
+def ask(
+    question: str = typer.Argument(
+        ...,
+        help='Natural-language question to answer from the lore. Example: "What is the Covenant?"',
+    ),
+    top_n: int = typer.Option(
+        3,
+        "--top-n",
+        help="Maximum number of claims to retrieve as context.",
+    ),
+) -> None:
+    """Answer a question grounded in reviewed lore claims.
+
+    Searches approved claims using full-text search (FTS5), formats the top
+    results as context, and calls the local GGUF model to produce an answer.
+    The model is instructed to answer only from the supplied evidence.
+
+    If no relevant claims are found the model is not called and a message is
+    printed instead. Every answer is accompanied by a numbered evidence list
+    showing the supporting claim IDs, truth status, chunk, and source span.
+    """
+    configure()
+
+    # Deferred import — loads GGUF model; must not happen at module level.
+    from saskan_lore.analyzer.answering import answer as _answer  # noqa: PLC0415
+    from saskan_lore.data.models import Claim, Document  # noqa: PLC0415
+
+    try:
+        with get_session() as session:
+            result = _answer(question, session, top_n=top_n)
+
+            if not result.answerable:
+                typer.echo("No relevant claims found for that question.")
+                raise typer.Exit(code=0)
+
+            typer.echo(f"\nAnswer: {result.answer}")
+            typer.echo("\nEvidence:")
+
+            for i, claim_id in enumerate(result.evidence, start=1):
+                claim = session.get(Claim, claim_id)
+                if claim is None:
+                    continue
+                doc = session.get(Document, claim.document_id)
+                chunk_label = f"chunk_{claim.chunk_id:04d}"
+                doc_title = doc.title if doc else "unknown"
+                typer.echo(
+                    f"  [{i}] claim_{claim_id:04d} ({claim.truth_status})"
+                    f' — {chunk_label} — "{doc_title}"'
+                )
+                typer.echo(f'      "{claim.source_span}"')
+
+            typer.echo("")
+
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("Ask failed", extra={"question": question, "error": str(exc)})
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

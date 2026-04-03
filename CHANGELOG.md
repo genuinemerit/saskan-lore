@@ -5,6 +5,58 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.5.0] - 2026-04-03 — R5 Retrieval and Answering
+
+### Added
+
+- `saskan_lore/analyzer/retrieval.py` — `tokenize(query)`, `retrieve(query, session, top_n=3)`,
+  `format_context(hits)`: FTS5 BM25 full-text search over approved claims; returns `RetrievalHit`
+  list with `claim_id`, `claim_text`, `source_span`, `score`
+- `saskan_lore/analyzer/answering.py` — `answer(question, session, top_n=3)`: retrieves hits,
+  formats grounded context, calls `inference.complete()`, returns `AnswerResult` with answer and
+  supporting claims
+- `saskan_lore/analyzer/answer.txt` — grounded-answer prompt template; `{context}` + `{question}`
+  placeholders; instructs model to cite only provided context
+- `alembic/versions/c2d4a8f3e610_add_claims_fts.py` — Alembic migration: `claims_fts` FTS5
+  content virtual table backed by `claims`; content synced via `load_reviewed.load_file()`
+- `saskan-lore ask "<question>"` CLI command added to `loader/ingest.py`; inference import
+  deferred to avoid model load on unrelated commands
+- `docs/design/r5_retrieval/test_cases.md` — R5 test case register (TC-R5-01 through TC-R5-14)
+- `docs/design/backlog.md` — BL-009 added (FTS5 manual re-sync utility)
+
+### Changed
+
+- `saskan_lore/data/schema/database_schema.py` renamed to `data_schema.py`; all import
+  references updated across source, tests, and docs
+- `saskan_lore/data/schema/data_schema.py` — `RetrievalHit` and `AnswerResult` frozen
+  dataclasses added; `review_status` vocabulary (`pending` / `approved` / `rejected`)
+  replaces prior `reviewed: bool` + `status: "rejected"` throughout staging structures
+- `saskan_lore/data/schema/extract_schema.json` — updated to enforce `review_status='pending'`
+  on extractor output (was `reviewed=false`); `truth_status` enum unchanged
+- `saskan_lore/analyzer/extractor.py` — sets `review_status='pending'` at write time
+- `saskan_lore/loader/review_staging.py` — sets `review_status='approved'` or `'rejected'`
+- `saskan_lore/loader/load_reviewed.py` — reads `review_status`; triggers FTS5 content rebuild
+  after each successful load commit
+- `tests/conftest.py` — shared `db_session` fixture creates `claims_fts` FTS5 virtual table
+  via raw SQL after `Base.metadata.create_all()`
+- `docs/guides/user.md` — Stage 5 section added (`ask`, `retrieve`, `format_context`, `answer`);
+  `review_status` vocabulary fixed throughout; broken relative links fixed; pipeline status updated
+- `docs/guides/workflows.md` — retrieval approach updated to FTS5/BM25; test dirs listed
+  explicitly
+- `docs/guides/reference.md` — FTS5 entry expanded with BM25 explanation; Cosine Similarity
+  entry added
+- `README.md` — R4 and R5 status → Complete; description updated; `setenv.sh` usage fixed
+
+### Tests
+
+- `tests/unit/r5_retrieval/test_r5_retrieval.py` — 14 unit tests; all passing
+  (TC-R5-01 through TC-R5-14); `llama_cpp` mocked via `sys.modules` in conftest
+- `tests/unit/r3_extraction/test_r3_extraction.py` — updated for `review_status` vocabulary
+- `tests/unit/r4_review_load/test_r4_review_load.py` — updated for `review_status` vocabulary
+- Full suite: 54/54 passing
+
+---
+
 ## [0.4.0] - 2026-04-03 — R4 Human Review and Load
 
 ### Added
@@ -30,7 +82,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- `saskan_lore/data/schema/database_schema.py` — `ExtractionClaimRecord.statement`
+- `saskan_lore/data/schema/data_schema.py` — `ExtractionClaimRecord.statement`
   renamed to `claim_text` to align staging field names with DB column names
 - `saskan_lore/data/schema/extract_schema.json` — `statement` renamed to `claim_text`
   in claim schema; description updated to clarify this schema covers extractor output

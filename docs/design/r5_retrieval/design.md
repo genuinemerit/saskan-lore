@@ -1,6 +1,6 @@
 # Release 5: Retrieval and Answering
 
-Status: **Pending R4**
+Status: **In Progress**
 
 ## Objective
 
@@ -13,9 +13,10 @@ RAG path.
 
 ## Deliverables
 
-- `saskan_lore/analyzer/retrieval.py` — keyword search over claims and chunks
-- `saskan_lore/analyzer/answering.py` — format context, call model, return answer + evidence
-- `saskan_lore/prompts/answer.txt` — answer prompt template (with context + question slots)
+- `saskan_lore/analyzer/retrieval.py` — FTS5 search over claims; returns `RetrievalHit` list
+- `saskan_lore/analyzer/answering.py` — format context, call model, return `AnswerResult`
+- `saskan_lore/analyzer/answer.txt` — answer prompt template (with context + question slots)
+- `saskan_lore/data/schema/data_schema.py` — `RetrievalHit` and `AnswerResult` dataclasses added here
 - CLI command: `saskan-lore ask "<question>"`
 - Embedding retrieval path: scaffolded but not required for MVP
 
@@ -38,19 +39,21 @@ RAG path.
 
 ## Design Notes
 
-### Retrieval: keyword search (MVP)
+### Retrieval: FTS5 search (MVP)
 
-Tokenize the query (lowercase, split on whitespace and punctuation), then search
-`claims.claim_text` and `chunks.text` using SQL `LIKE` or SQLite FTS5.
+Use SQLite FTS5 to search `claims.claim_text`. FTS5 requires a `claims_fts` content virtual
+table, added via an Alembic migration. The virtual table mirrors `claims.id` and
+`claims.claim_text` without duplicating data (a *content table* pointing to `claims`).
 
-Only `reviewed=True` claims are eligible. Results are ranked by match count (simple).
-Return the top N results (default N=3, configurable).
+Only claims with `reviewed=True` in the DB are eligible (FTS query joined to `claims` table
+to enforce this). Results are ranked by BM25 relevance (FTS5 built-in). Return the top N
+results (default N=3, configurable).
 
-Each result includes:
+Each result is a `RetrievalHit` (defined in `data_schema.py`) containing:
 
 ```txt
-- claim_id (or chunk_id)
-- claim_text (or chunk text)
+- claim_id
+- claim_text
 - source_span
 - truth_status
 - document title
@@ -59,22 +62,21 @@ Each result includes:
 
 ```python
 def retrieve(query: str, session: Session, top_n: int = 3) -> list[RetrievalHit]:
-    tokens = tokenize(query)
-    # build LIKE clauses for each token against claim_text
-    # return top_n matches ordered by token hit count
+    # query claims_fts virtual table using FTS5 MATCH syntax
+    # join result rowids to claims table, filter reviewed=True
+    # return top_n hits ordered by BM25 rank
     ...
 ```
 
-### Retrieval: embedding path (scaffold only)
+### Retrieval: embedding path (deferred)
 
-If embedding retrieval is added later:
-
-- Embed claims at load time, store as JSON blob or in a separate `claim_embeddings` table.
-- At query time: embed query, compute cosine similarity in numpy, return top N.
-- This is a drop-in replacement for keyword search behind the same `retrieve()` interface.
-- Do not implement in this release; the interface design should accommodate it.
+Tracked in backlog as BL-009. Do not implement in this release. The `retrieve()` interface
+is designed to accommodate a future embedding-based replacement without callers needing
+to change.
 
 ### Answering
+
+`AnswerResult` is defined in `data_schema.py`.
 
 ```python
 def answer(question: str, session: Session) -> AnswerResult:
@@ -87,7 +89,7 @@ def answer(question: str, session: Session) -> AnswerResult:
     return AnswerResult(answer=raw, evidence=[h.claim_id for h in hits], answerable=True)
 ```
 
-### Answer prompt template (`answer.txt`)
+### Answer prompt template (`saskan_lore/analyzer/answer.txt`)
 
 Must include:
 
@@ -150,3 +152,38 @@ Evidence:
 - The model is not called directly from `answering.py`; only `inference.complete()` is used.
 - CLI output displays answer text and numbered evidence with claim ID, truth status,
   chunk reference, and source span.
+
+---
+
+## Progress
+
+### Housekeeping
+
+- [x] `database_schema.py` renamed to `data_schema.py`; all code and doc references updated
+- [x] R5 design doc updated: prompt path (`analyzer/answer.txt`), FTS5 chosen, type locations
+- [x] FTS5 entry added to `docs/guides/reference.md`
+- [x] BL-009 (embedding retrieval path) added to `docs/design/backlog.md`
+- [x] `reviewed`/`status` vocabulary replaced by `review_status` enum across all staging
+  files, loader code (`extractor.py`, `review_staging.py`, `load_reviewed.py`, `ingest.py`),
+  `extract_schema.json`, `data_schema.py`, and all R3/R4 tests; BL-002 resolved
+
+### Implementation
+
+- [x] Alembic migration: `claims_fts` FTS5 content virtual table backed by `claims`
+- [x] `saskan_lore/data/schema/data_schema.py` — `RetrievalHit` and `AnswerResult` frozen dataclasses
+- [x] `saskan_lore/analyzer/retrieval.py` — `tokenize()`, `retrieve()`, `format_context()`
+- [x] `saskan_lore/analyzer/answering.py` — `answer()`
+- [x] `saskan_lore/analyzer/answer.txt` — grounded-answer prompt template
+- [x] `saskan-lore ask "<question>"` CLI command in `loader/ingest.py`
+- [x] FTS5 index rebuild triggered by `load_reviewed.load_file()` after each successful load
+
+### Testing
+
+- [x] `docs/design/r5_retrieval/test_cases.md` — test case register
+- [x] `tests/unit/r5_retrieval/test_r5_retrieval.py` — unit tests (TC-R5-01 through TC-R5-14)
+
+### Post-testing
+
+- [x] Review `docs/guides/user.md` — Stage 5 section added; review_status vocabulary updated
+- [x] Review `docs/guides/workflows.md` — retrieval approach and test structure updated
+- [x] Review `README.md` — status table, version, and description updated to R5 complete

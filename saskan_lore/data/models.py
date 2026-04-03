@@ -4,7 +4,7 @@ SQLAlchemy ORM models for saskan_lore.
 
 Defines Base, TimestampMixin, and all nine DB table model classes.
 
-For field-level reference see: saskan_lore/data/schema/database_schema.py
+For field-level reference see: saskan_lore/data/schema/data_schema.py
 For schema design notes see:   docs/design/r1_database/design.md
 """
 
