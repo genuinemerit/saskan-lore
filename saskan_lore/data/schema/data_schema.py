@@ -26,6 +26,10 @@ Staging (LLM extraction output, not DB tables):
     ExtractionClaimRecord  -- a single claim within an extraction result
     ExtractionRecord       -- full LLM extraction output for one chunk
 
+Evaluation input (varkaar_questions.json, not a DB table):
+    EvalQuestionInput  -- one entry in varkaar_questions.json; maps to EvalQuestionRecord
+                         on DB load via load_eval_questions()
+
 Query result types (retrieval and answering pipeline, R5):
     RetrievalHit   -- one FTS5 search result returned by retrieval.retrieve()
     AnswerResult   -- final result returned by answering.answer(), including
@@ -205,12 +209,14 @@ class EvalQuestionRecord:
     """
     An evaluation question with its expected answer.
 
-    Pre-pilot target: 10 questions covering the Covenant of Varkaar domain.
+    question_id: stable human-readable identifier, e.g. "q_001"; unique in DB.
+    Pilot target: 10 questions covering the Covenant of Varkaar domain.
 
     See: FR-008, ADR-006.
     """
 
     id: int
+    question_id: str  # stable string ID, e.g. "q_001"; unique; used for idempotent load
     question_text: str
     expected_answer: str
     scope: str  # lore domain, e.g. "varkaar"
@@ -349,3 +355,32 @@ class AnswerResult:
     answerable: bool
     answer: str | None
     evidence: list[int]
+
+
+# ---------------------------------------------------------------------------
+# Evaluation input -- varkaar_questions.json (not a DB table)
+# One entry per question; loaded into EvalQuestionRecord via load_eval_questions().
+# Validated against saskan_lore/data/schema/testing_schema.json before load.
+# See: FR-008, Workflow Stage 6.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class EvalQuestionInput:
+    """
+    One entry in varkaar_questions.json.
+
+    This is the JSON input format consumed by load_eval_questions(). It maps
+    directly to EvalQuestionRecord on DB load, with question_id used as the
+    idempotence key.
+
+    question_id:     stable human-readable ID, e.g. "q_001"
+    question_text:   the question posed to the pipeline
+    expected_answer: the correct answer, determined by the human worldbuilder
+    scope:           lore domain this question covers; always "varkaar" for the pilot
+    """
+
+    question_id: str
+    question_text: str
+    expected_answer: str
+    scope: str  # enum: "varkaar" (pilot scope)

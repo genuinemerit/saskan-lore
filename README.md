@@ -63,7 +63,7 @@ are not part of the repository.
 
 ## Project status
 
-This is a pre-pilot learning project. Releases follow a defined dependency chain:
+This is a pilot project. Releases follow a defined dependency chain:
 
 | Release | Name | Status |
 | --- | --- | --- |

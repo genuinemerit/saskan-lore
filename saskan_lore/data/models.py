@@ -191,6 +191,7 @@ class EvalQuestion(TimestampMixin, Base):
     __tablename__ = "eval_questions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    question_id = Column(String(50), nullable=False, unique=True)  # stable ID e.g. "q_001"
     question_text = Column(Text, nullable=False)
     expected_answer = Column(Text, nullable=False)
     scope = Column(String(50), nullable=False, index=True)

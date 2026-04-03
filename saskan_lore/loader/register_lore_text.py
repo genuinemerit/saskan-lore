@@ -36,7 +36,7 @@ def register_document(
         session:     Active SQLAlchemy session.
         title:       Human-readable document title.
         source_path: Path to the source PDF (relative or absolute).
-        scope:       Lore scope. Only "varkaar" is accepted in pre-pilot.
+        scope:       Lore scope. Only "varkaar" is accepted in the pilot.
 
     Returns:
         The existing or newly inserted Document record.

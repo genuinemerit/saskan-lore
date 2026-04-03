@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.6.0] - 2026-04-03 — R6 Evaluation
+
+### Added
+
+- `saskan_lore/loader/load_eval_questions.py` — `load_eval_questions(session, path)`:
+  validates `varkaar_questions.json` against `testing_schema.json`, inserts
+  `EvalQuestion` records; idempotent by `question_id`
+- `saskan_lore/analyzer/evaluate.py` — `run_evaluation()`, `grade_result()`,
+  `eval_summary()`, `print_eval_summary()`, `export_results()`
+- Five CLI commands added to `loader/ingest.py`:
+  - `saskan-lore load-eval-questions` — loads `varkaar_questions.json` into DB
+  - `saskan-lore evaluate` — runs all Varkaar questions, writes `EvalResult` records
+  - `saskan-lore grade <result-id> pass|fail [--type TYPE] [--notes TEXT]`
+  - `saskan-lore eval-summary` — prints pass rate and failure type breakdown
+  - `saskan-lore export-eval [--output PATH]` — exports all results to JSON
+- `alembic/versions/e7f3a2c91d40_add_eval_question_id.py` — adds `question_id`
+  string column (unique, not null) to `eval_questions`
+- `saskan_lore/data/eval/varkaar_questions.json` — 10 Varkaar evaluation questions
+- `saskan_lore/data/schema/testing_schema.json` — JSON Schema validating
+  `varkaar_questions.json` input format
+- `saskan_lore/data/schema/data_schema.py` — `EvalQuestionInput` frozen dataclass;
+  `question_id` field added to `EvalQuestionRecord`
+- `tests/fixtures/synthetic_lore.txt` — synthetic fixture for integration tests
+- `tests/integration/test_r6_integration.py` — 8 integration tests (Parts A and B):
+  ingest → extract → approve → load → FTS5 → questions → evaluate → grade → export
+- `docs/design/r6_evaluation/test_cases.md` — R6 test case register
+- `docs/design/r6_evaluation/system_test.md` — system acceptance test plan and checklist
+
+### Changed
+
+- `saskan_lore/data/models.py` — `EvalQuestion.question_id` column added
+- "pre-pilot" → "pilot" terminology refactored across all docs, code comments,
+  ADRs, FRs, NFRs, README, and CHANGELOG; `NFR-005` title updated to
+  "Pilot Pragmatism"; `ADR-001` title updated to "No Model Training in Pilot";
+  `STATUS.md` removed (content migrated to backlog and CHANGELOG)
+- `docs/design/backlog.md` — BL-010 through BL-018 added (STATUS.md ideas +
+  configurable scope tags)
+- `docs/design/design_000_index.md` — R4/R5 → Complete, R6 → In Progress
+
+### Tests
+
+- `tests/unit/r6_evaluation/test_r6_evaluation.py` — 15 unit tests; all passing
+  (TC-R6-01 through TC-R6-15)
+- `tests/integration/test_r6_integration.py` — 8 integration tests; all passing
+  (TC-R6-INT-A1 through TC-R6-INT-B4)
+- Full suite: 77/77 passing
+
+---
+
 ## [0.5.0] - 2026-04-03 — R5 Retrieval and Answering
 
 ### Added
@@ -256,7 +305,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Pre-release] - 2026-03-30
+## [Initial] - 2026-03-30
 
 ### Added
 

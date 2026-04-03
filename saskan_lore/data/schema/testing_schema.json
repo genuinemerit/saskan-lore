@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "testing_schema.json",
+  "title": "Evaluation Question Set",
+  "description": "Schema for varkaar_questions.json — the committed evaluation question set loaded by load_eval_questions(). Derived from EvalQuestionInput in data_schema.py. Each entry maps to one EvalQuestionRecord in the DB on load; question_id is the idempotence key.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "required": ["question_id", "question_text", "expected_answer", "scope"],
+    "additionalProperties": false,
+    "properties": {
+      "question_id": {
+        "type": "string",
+        "description": "Stable human-readable identifier, e.g. 'q_001'. Must be unique within the file.",
+        "pattern": "^q_[0-9]{3}$",
+        "minLength": 1
+      },
+      "question_text": {
+        "type": "string",
+        "description": "The question posed to the retrieval and answering pipeline.",
+        "minLength": 1
+      },
+      "expected_answer": {
+        "type": "string",
+        "description": "The correct answer as determined by the human worldbuilder. Used as the reference during human grading.",
+        "minLength": 1
+      },
+      "scope": {
+        "type": "string",
+        "description": "Lore domain this question covers. Only 'varkaar' is valid for the pilot.",
+        "enum": ["varkaar"]
+      }
+    }
+  }
+}

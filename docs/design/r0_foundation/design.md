@@ -40,7 +40,7 @@ All completed:
 | ADR-005 | Relationships modeled from the start |
 | ADR-006 | Scope limited to Covenant of Varkaar |
 | ADR-007 | No lore expansion during extraction |
-| NFR-005 | Pre-pilot pragmatism — favor simplicity, keep artifacts inspectable |
+| NFR-005 | Pilot pragmatism — favor simplicity, keep artifacts inspectable |
 
 ---
 

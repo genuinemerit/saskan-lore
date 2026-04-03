@@ -29,7 +29,7 @@ and chunks, ready for extraction.
 | NFR-001 | Local only; source files read from `data/lore_texts/` |
 | NFR-003 | Chunks stored with sequence for downstream traceability |
 | NFR-005 | Simple implementation; no streaming or async needed |
-| ADR-006 | Scope guard: only documents with `scope="varkaar"` are ingested in pre-pilot |
+| ADR-006 | Scope guard: only documents with `scope="varkaar"` are ingested in pilot |
 | Workflow Stage 1 | Source selection — document registered as candidate |
 | Workflow Stage 2 | Chunking — reproducible, order-preserving |
 

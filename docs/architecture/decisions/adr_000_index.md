@@ -4,7 +4,7 @@ One ADR per file. Each captures a decision, its rationale, and its implications.
 
 | ADR | Title |
 | --- | --- |
-| [ADR-001](adr_001.md) | No Training in Pre-Pilot |
+| [ADR-001](adr_001.md) | No Model Training in Pilot |
 | [ADR-002](adr_002.md) | SQLite as System of Record |
 | [ADR-003](adr_003.md) | Claims as First-Class Records |
 | [ADR-004](adr_004.md) | Truth-Status Awareness |

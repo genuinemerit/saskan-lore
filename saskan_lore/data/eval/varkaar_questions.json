@@ -1,0 +1,62 @@
+[
+  {
+    "question_id": "q_001",
+    "question_text": "How many provinces are full members of the Covenant of Varkaar?",
+    "expected_answer": "Four.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_002",
+    "question_text": "When did Eelan province accept protection under the Articles of Borded?",
+    "expected_answer": "After the Time of Fire.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_003",
+    "question_text": "How does the Covenant of Varkaar function?",
+    "expected_answer": "Through negotiated agreements.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_004",
+    "question_text": "What is the role of the Varkaar Council?",
+    "expected_answer": "Set policy on defense, foreign relations and trade.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_005",
+    "question_text": "What is the Great Ring Road?",
+    "expected_answer": "An irregular circuit connecting major towns of the Saskan Lands.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_006",
+    "question_text": "What are the Articles of Borded?",
+    "expected_answer": "The core agreements between companies of the Varkaar Arms.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_007",
+    "question_text": "In what era did the Eelani-Futanik War occur?",
+    "expected_answer": "In the 15th century after the arrival.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_008",
+    "question_text": "What are the Ring Runners?",
+    "expected_answer": "The official courier service of the Varkaar Arms.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_009",
+    "question_text": "What is the Varkaar Union?",
+    "expected_answer": "A coordinator of guild activities.",
+    "scope": "varkaar"
+  },
+  {
+    "question_id": "q_010",
+    "question_text": "What is the Cann of Borded?",
+    "expected_answer": "Military commanders, town administrators and provincial managers.",
+    "scope": "varkaar"
+  }
+]

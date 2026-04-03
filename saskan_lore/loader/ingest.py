@@ -3,11 +3,16 @@
 Top-level CLI entry point for saskan-lore.
 
 Commands:
-    ingest  -- extract text from a PDF, register it, and chunk it (R2)
-    extract -- run lore extraction on one chunk or all chunks for a document (R3)
-    review  -- interactively review claims in a staging file (R4)
-    load    -- load a reviewed staging file into the database (R4)
-    ask     -- answer a natural-language question from retrieved lore claims (R5)
+    ingest              -- extract text from a PDF, register it, and chunk it (R2)
+    extract             -- run lore extraction on one chunk or all chunks for a document (R3)
+    review              -- interactively review claims in a staging file (R4)
+    load                -- load a reviewed staging file into the database (R4)
+    ask                 -- answer a natural-language question from retrieved lore claims (R5)
+    load-eval-questions -- load evaluation questions from varkaar_questions.json (R6)
+    evaluate            -- run all eval questions through the pipeline; write results (R6)
+    grade               -- set pass/fail on one eval result (R6)
+    eval-summary        -- print pass rate and failure breakdown (R6)
+    export-eval         -- export all eval results to JSON (R6)
 
 CLI entry point (pyproject.toml):
     [tool.poetry.scripts]
@@ -31,6 +36,10 @@ from saskan_lore.infra.db.db import get_session
 from saskan_lore.infra.log.logger import configure, get_logger
 from saskan_lore.loader.load_chunks import load_chunks
 from saskan_lore.loader.register_lore_text import register_document
+from saskan_lore.loader.load_eval_questions import (
+    load_eval_questions,
+    print_summary as print_eval_load_summary,
+)
 from saskan_lore.loader.load_reviewed import load_file, print_load_summary
 from saskan_lore.loader.review_staging import print_summary, review_file
 
@@ -80,7 +89,7 @@ def ingest(
         "--scope",
         help=(
             "Lore scope for this document. "
-            "Only 'varkaar' is accepted in the pre-pilot release. "
+            "Only 'varkaar' is accepted in the pilot. "
             "Documents outside the allowed scope are rejected. "
             "[default: varkaar]"
         ),
@@ -427,6 +436,184 @@ def ask(
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         log.error("Ask failed", extra={"question": question, "error": str(exc)})
+        raise typer.Exit(code=1)
+
+
+@app.command("load-eval-questions")
+def load_eval_questions_cmd(
+    path: str = typer.Option(
+        None,
+        "--path",
+        help=(
+            "Path to an alternative questions JSON file. "
+            "Defaults to saskan_lore/data/eval/varkaar_questions.json."
+        ),
+    ),
+) -> None:
+    """Load evaluation questions into the database from varkaar_questions.json.
+
+    Validates the file against testing_schema.json before inserting. Safe to
+    run more than once — questions already present are skipped (idempotent by
+    question_id).
+    """
+    configure()
+    from pathlib import Path  # noqa: PLC0415
+
+    try:
+        src = Path(path) if path else None
+        with get_session() as session:
+            summary = load_eval_questions(session, src)
+        print_eval_load_summary(summary)
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("load-eval-questions failed", extra={"error": str(exc)})
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def evaluate() -> None:
+    """Run all Varkaar evaluation questions through the retrieval and answering pipeline.
+
+    Creates one EvalResult record per question. Answers are written to the
+    database with pass_fail=None — use `saskan-lore grade` to set pass/fail
+    after reviewing each answer.
+
+    Loads the local GGUF model on startup.
+    """
+    configure()
+
+    # Deferred import — loads GGUF model; must not happen at module level.
+    from saskan_lore.analyzer.evaluate import (  # noqa: PLC0415
+        run_evaluation,
+    )
+
+    try:
+        with get_session() as session:
+            records = run_evaluation(session)
+
+        if not records:
+            typer.echo("No active Varkaar evaluation questions found.")
+            raise typer.Exit(code=0)
+
+        typer.echo(f"\nEvaluation complete: {len(records)} result(s) written.")
+        typer.echo("Result IDs:")
+        for r in records:
+            typer.echo(f"  result_id={r.id}  question_id={r.question_id}")
+        typer.echo("\nReview answers then run `saskan-lore grade <result-id> pass|fail`.")
+        typer.echo("")
+
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("evaluate failed", extra={"error": str(exc)})
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def grade(
+    result_id: int = typer.Argument(
+        ...,
+        help="Primary key of the EvalResult to grade (from `saskan-lore evaluate` output).",
+    ),
+    verdict: str = typer.Argument(
+        ...,
+        help="Grade: 'pass' or 'fail'.",
+        metavar="pass|fail",
+    ),
+    failure_type: str = typer.Option(
+        None,
+        "--type",
+        help=(
+            "Failure classification (required when verdict=fail). "
+            "One of: wrong_fact, hallucination, incomplete, style."
+        ),
+    ),
+    notes: str = typer.Option(
+        None,
+        "--notes",
+        help="Optional free-text note for failure analysis.",
+    ),
+) -> None:
+    """Set pass/fail on one evaluation result.
+
+    After running `saskan-lore evaluate`, inspect each model answer and
+    grade it against the expected answer in varkaar_questions.json. Run
+    `saskan-lore eval-summary` when all results are graded.
+    """
+    configure()
+    from saskan_lore.analyzer.evaluate import grade_result  # noqa: PLC0415
+
+    try:
+        with get_session() as session:
+            record = grade_result(
+                session,
+                result_id=result_id,
+                pass_fail=verdict,
+                failure_type=failure_type or None,
+                notes=notes or None,
+            )
+        typer.echo(
+            f"Graded result_id={record.id}: {record.pass_fail}"
+            + (f" ({record.failure_type})" if record.failure_type else "")
+        )
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("grade failed", extra={"result_id": result_id, "error": str(exc)})
+        raise typer.Exit(code=1)
+
+
+@app.command("eval-summary")
+def eval_summary_cmd() -> None:
+    """Print pass rate and failure type breakdown for graded Varkaar eval results."""
+    configure()
+    from saskan_lore.analyzer.evaluate import eval_summary, print_eval_summary  # noqa: PLC0415
+
+    try:
+        with get_session() as session:
+            summary = eval_summary(session)
+        print_eval_summary(summary)
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("eval-summary failed", extra={"error": str(exc)})
+        raise typer.Exit(code=1)
+
+
+@app.command("export-eval")
+def export_eval_cmd(
+    output_path: str = typer.Option(
+        None,
+        "--output",
+        help=(
+            "Destination path for the JSON export. " "Defaults to var/eval_export_<timestamp>.json."
+        ),
+    ),
+) -> None:
+    """Export all evaluation results to JSON.
+
+    Joins EvalResult records to their EvalQuestion for a self-contained
+    export. Run this before wiping the database at graduation.
+    """
+    configure()
+    from datetime import datetime  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    from saskan_lore.analyzer.evaluate import export_results  # noqa: PLC0415
+
+    try:
+        if output_path:
+            dest = Path(output_path)
+        else:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            dest = Path("var") / f"eval_export_{ts}.json"
+
+        with get_session() as session:
+            written = export_results(session, dest)
+
+        typer.echo(f"Exported eval results to: {written}")
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        log.error("export-eval failed", extra={"error": str(exc)})
         raise typer.Exit(code=1)
 
 

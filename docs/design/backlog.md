@@ -31,6 +31,7 @@ letting it get lost in commit messages or conversation history.
 | BL-015 | Design | LoRA / PEFT fine-tuning path: fine-tune a small model (Qwen 3B or similar) on reviewed claims using LoRA/PEFT via MLX on Apple Silicon. ADR-001 defers this to post-MVP. No design doc covers training data format, evaluation criteria, or toolchain. Should be designed before the reviewed corpus grows too large to curate manually. | STATUS |
 | BL-016 | Design | Two-assistant tool vision: (1) continuity assistant — "is this consistent with established lore?" used during active writing; (2) exploratory assistant — "tell me about X" for worldbuilding research. These are distinct products and may warrant separate design docs when retrieval is evaluated and stable. | STATUS |
 | BL-017 | Design | Saskan console UI: long-term concept for a unified interface combining search, entity cards, timeline view, relationship graph, and continuity checker. Not relevant until retrieval is evaluated. No design work has been done. | STATUS |
+| BL-018 | Design | Configurable scope tags: `"varkaar"` is currently hard-coded in `evaluate.py` (`_SCOPE`), `testing_schema.json` (enum), `register_lore_text.py`, and CLI help text. Expanding to multiple scopes (e.g. `["varkaar", "highweir"]`) requires a code change. Should be driven by config/env so a `scope-setup.sh` script or env variable can set the active scope list without touching source. Requires an ADR covering scope config format and validation before implementation. | R6 |
 
 ---
 

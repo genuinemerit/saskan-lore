@@ -129,7 +129,7 @@ non-zero status code.
 | --- | --- | --- | --- |
 | `--path` | yes | — | Path to the source PDF file |
 | `--title` | yes | — | Human-readable title for the document |
-| `--scope` | no | `varkaar` | Lore scope (only `varkaar` accepted in pre-pilot) |
+| `--scope` | no | `varkaar` | Lore scope (only `varkaar` accepted in pilot) |
 
 #### Examples
 
