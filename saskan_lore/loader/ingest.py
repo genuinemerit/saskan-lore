@@ -134,6 +134,7 @@ def ingest(
                 scope=scope,
             )
             n = load_chunks(session=session, document=doc, text=text)
+            doc_id = doc.id
     except ValueError as exc:
         typer.echo(f"Error: {exc}", err=True)
         log.error("Ingestion rejected", extra={"reason": str(exc)})
@@ -147,10 +148,10 @@ def ingest(
         typer.echo(f"Already ingested: {title!r} (no changes made)")
         log.info("Already ingested", extra={"title": title, "path": path})
     else:
-        typer.echo(f"Ingested {title!r}: {n} chunks stored (document id={doc.id})")
+        typer.echo(f"Ingested {title!r}: {n} chunks stored (document id={doc_id})")
         log.info(
             "Ingestion complete",
-            extra={"title": title, "path": path, "doc_id": doc.id, "chunks": n},
+            extra={"title": title, "path": path, "doc_id": doc_id, "chunks": n},
         )
 
 
@@ -190,48 +191,51 @@ def extract(
         typer.echo("Error: provide exactly one of --chunk-id or --document-id.", err=True)
         raise typer.Exit(code=1)
 
+    ok_count = 0
+    err_count = 0
+    skip_count = 0
+
     try:
         with get_session() as session:
             if chunk_id is not None:
                 chunks_to_process = _get_chunks_for_id(session, chunk_id)
             else:
                 chunks_to_process = _get_chunks_for_document(session, document_id)
+
+            if not chunks_to_process:
+                typer.echo("No chunks found for the given ID.")
+                raise typer.Exit(code=0)
+
+            typer.echo(f"Extracting {len(chunks_to_process)} chunk(s)...")
+
+            for chunk, document in chunks_to_process:
+                try:
+                    out_path = extract_chunk(chunk, document)
+                except Exception as exc:
+                    typer.echo(f"  {_label(chunk)}: failed — {exc}", err=True)
+                    log.error(
+                        "extract_chunk raised",
+                        extra={"chunk_id": chunk.id, "error": str(exc)},
+                    )
+                    err_count += 1
+                    continue
+
+                if out_path is None:
+                    typer.echo(f"  {_label(chunk)}: skipped (out of scope)")
+                    skip_count += 1
+                elif "_error" in out_path.name:
+                    typer.echo(f"  {_label(chunk)}: parse error -> {out_path.name}")
+                    err_count += 1
+                else:
+                    typer.echo(f"  {_label(chunk)}: ok -> {out_path.name}")
+                    ok_count += 1
+
+    except typer.Exit:
+        raise
     except Exception as exc:
-        typer.echo(f"Error: database query failed: {exc}", err=True)
-        log.error("Extract DB query failed", extra={"error": str(exc)})
+        typer.echo(f"Error: extraction failed: {exc}", err=True)
+        log.error("Extraction failed", extra={"error": str(exc)})
         raise typer.Exit(code=1)
-
-    if not chunks_to_process:
-        typer.echo("No chunks found for the given ID.")
-        raise typer.Exit(code=0)
-
-    typer.echo(f"Extracting {len(chunks_to_process)} chunk(s)...")
-
-    ok_count = 0
-    err_count = 0
-    skip_count = 0
-
-    for chunk, document in chunks_to_process:
-        try:
-            out_path = extract_chunk(chunk, document)
-        except Exception as exc:
-            typer.echo(f"  {_label(chunk)}: failed — {exc}", err=True)
-            log.error(
-                "extract_chunk raised",
-                extra={"chunk_id": chunk.id, "error": str(exc)},
-            )
-            err_count += 1
-            continue
-
-        if out_path is None:
-            typer.echo(f"  {_label(chunk)}: skipped (out of scope)")
-            skip_count += 1
-        elif "_error" in out_path.name:
-            typer.echo(f"  {_label(chunk)}: parse error -> {out_path.name}")
-            err_count += 1
-        else:
-            typer.echo(f"  {_label(chunk)}: ok -> {out_path.name}")
-            ok_count += 1
 
     typer.echo(f"Done: {ok_count} extracted, {err_count} errors, {skip_count} skipped.")
     log.info(
@@ -490,15 +494,16 @@ def evaluate() -> None:
     try:
         with get_session() as session:
             records = run_evaluation(session)
+            result_refs = [(r.id, r.question_id) for r in records]
 
-        if not records:
+        if not result_refs:
             typer.echo("No active Varkaar evaluation questions found.")
             raise typer.Exit(code=0)
 
-        typer.echo(f"\nEvaluation complete: {len(records)} result(s) written.")
+        typer.echo(f"\nEvaluation complete: {len(result_refs)} result(s) written.")
         typer.echo("Result IDs:")
-        for r in records:
-            typer.echo(f"  result_id={r.id}  question_id={r.question_id}")
+        for result_id, question_id in result_refs:
+            typer.echo(f"  result_id={result_id}  question_id={question_id}")
         typer.echo("\nReview answers then run `saskan-lore grade <result-id> pass|fail`.")
         typer.echo("")
 
@@ -542,9 +547,10 @@ def grade(
     `saskan-lore eval-summary` when all results are graded.
     """
     configure()
-    from saskan_lore.analyzer.evaluate import grade_result  # noqa: PLC0415
 
     try:
+        from saskan_lore.analyzer.evaluate import grade_result  # noqa: PLC0415
+
         with get_session() as session:
             record = grade_result(
                 session,
@@ -553,9 +559,12 @@ def grade(
                 failure_type=failure_type or None,
                 notes=notes or None,
             )
+            result_pass_fail = record.pass_fail
+            result_failure_type = record.failure_type
+
         typer.echo(
-            f"Graded result_id={record.id}: {record.pass_fail}"
-            + (f" ({record.failure_type})" if record.failure_type else "")
+            f"Graded result_id={result_id}: {result_pass_fail}"
+            + (f" ({result_failure_type})" if result_failure_type else "")
         )
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)

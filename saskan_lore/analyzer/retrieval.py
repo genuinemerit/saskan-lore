@@ -39,6 +39,64 @@ log = logging.getLogger(__name__)
 
 _TOKEN_RE = re.compile(r"[^\w]+")  # split on anything that is not a word character
 
+# Common English function words that add no retrieval signal when used as FTS5
+# AND terms.  Filtering these prevents queries like "How many X are there?" from
+# requiring every claim to contain "how", "many", "are", "there".
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "been",
+        "but",
+        "by",
+        "did",
+        "do",
+        "does",
+        "for",
+        "from",
+        "had",
+        "has",
+        "have",
+        "how",
+        "i",
+        "in",
+        "is",
+        "it",
+        "its",
+        "many",
+        "no",
+        "not",
+        "of",
+        "on",
+        "or",
+        "s",
+        "so",
+        "than",
+        "that",
+        "the",
+        "their",
+        "there",
+        "they",
+        "this",
+        "to",
+        "was",
+        "were",
+        "what",
+        "when",
+        "where",
+        "which",
+        "who",
+        "why",
+        "will",
+        "with",
+    }
+)
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -57,7 +115,7 @@ def tokenize(query: str) -> list[str]:
     Returns:
         List of non-empty lowercase token strings.
     """
-    return [t for t in _TOKEN_RE.split(query.lower()) if t]
+    return [t for t in _TOKEN_RE.split(query.lower()) if t and t not in _STOPWORDS]
 
 
 def retrieve(query: str, session: Session, top_n: int = 3) -> list[RetrievalHit]:

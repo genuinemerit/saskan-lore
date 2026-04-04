@@ -185,7 +185,7 @@ def test_load_eval_questions_rejects_invalid_schema(db_session, tmp_path):
 def test_run_evaluation_creates_one_result_per_question(seeded_with_claims):
     """run_evaluation() inserts exactly one EvalResult per active question."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     assert len(records) == 2
@@ -200,7 +200,7 @@ def test_run_evaluation_creates_one_result_per_question(seeded_with_claims):
 def test_run_evaluation_pass_fail_is_none(seeded_with_claims):
     """EvalResult.pass_fail is None immediately after run_evaluation()."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     for r in records:
@@ -216,7 +216,7 @@ def test_run_evaluation_pass_fail_is_none(seeded_with_claims):
 def test_run_evaluation_evidence_is_json(seeded_with_claims):
     """retrieved_evidence is a JSON-encoded list, even when empty."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     for r in records:
@@ -231,7 +231,7 @@ def test_run_evaluation_evidence_is_json(seeded_with_claims):
 
 def test_run_evaluation_no_questions_returns_empty(db_session):
     """run_evaluation() returns [] when no active varkaar questions exist."""
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(db_session)
 
     assert records == []
@@ -246,7 +246,7 @@ def test_run_evaluation_no_questions_returns_empty(db_session):
 def test_grade_result_sets_fields(seeded_with_claims):
     """grade_result() writes pass_fail, failure_type, and notes to the record."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     result = grade_result(
@@ -270,7 +270,7 @@ def test_grade_result_sets_fields(seeded_with_claims):
 def test_grade_result_rejects_invalid_verdict(seeded_with_claims):
     """grade_result() raises ValueError when pass_fail is not 'pass' or 'fail'."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     with pytest.raises(ValueError, match="pass_fail"):
@@ -285,7 +285,7 @@ def test_grade_result_rejects_invalid_verdict(seeded_with_claims):
 def test_grade_result_rejects_invalid_failure_type(seeded_with_claims):
     """grade_result() raises ValueError for an unrecognised failure_type."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     with pytest.raises(ValueError, match="failure_type"):
@@ -316,7 +316,7 @@ def test_grade_result_unknown_id_raises(db_session):
 def test_eval_summary_correct_counts(seeded_with_claims):
     """eval_summary() returns accurate pass/fail/ungraded counts."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     grade_result(session, result_id=records[0].id, pass_fail="pass")
@@ -344,7 +344,7 @@ def test_eval_summary_correct_counts(seeded_with_claims):
 def test_eval_summary_ungraded_excluded(seeded_with_claims):
     """Ungraded results (pass_fail=None) count toward ungraded, not pass/fail."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     # Grade only the first result
@@ -365,7 +365,7 @@ def test_eval_summary_ungraded_excluded(seeded_with_claims):
 def test_export_results_writes_json(seeded_with_claims, tmp_path):
     """export_results() writes a JSON file with one entry per EvalResult."""
     session = seeded_with_claims
-    with patch("saskan_lore.analyzer.evaluate.answer", return_value=_MOCK_ANSWERABLE):
+    with patch("saskan_lore.analyzer.answering.answer", return_value=_MOCK_ANSWERABLE):
         records = run_evaluation(session)
 
     grade_result(session, result_id=records[0].id, pass_fail="pass")

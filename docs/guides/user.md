@@ -39,6 +39,12 @@ For a full description of terms and concepts used throughout this guide, see the
   - [retrieve](#retrieve)
   - [format_context](#format_context)
   - [answer](#answer)
+- [Stage 6: Evaluation](#stage-6-evaluation)
+  - [load-eval-questions (CLI command)](#load-eval-questions-cli-command)
+  - [evaluate (CLI command)](#evaluate-cli-command)
+  - [grade (CLI command)](#grade-cli-command)
+  - [eval-summary (CLI command)](#eval-summary-cli-command)
+  - [export-eval (CLI command)](#export-eval-cli-command)
 - [Database Administration](#database-administration)
   - [Inspecting the database](#inspecting-the-database)
   - [Deleting and recreating the database](#deleting-and-recreating-the-database)
@@ -65,7 +71,7 @@ Each source document moves through six stages:
 5. **Load to DB** — approved records are persisted to the SQLite database.
 6. **Evaluation** — stored questions are answered using retrieved Chunks and Claims.
 
-Stages 1–5 are complete. Stage 6 is planned.
+Stages 1–6 are complete.
 See [Workflows](../design/workflows.md) for the full stage definitions and acceptance criteria.
 
 ---
@@ -91,7 +97,9 @@ If the database file does not yet exist:
 poetry run python -m saskan_lore.infra.db.init_db
 ```
 
-This runs `alembic upgrade head`, creating `var/saskan_lore.db` with the full schema.
+This runs `alembic upgrade head`, creating the database at `$SASKAN_VAR_DIR/saskan_lore.db`
+(default: `~/.local/share/saskan-lore/saskan_lore.db`). The path is set by
+`scripts/setenv.sh` — run `source scripts/setenv.sh local` before initialising.
 See [Database Administration](#database-administration) for how to reset or inspect the
 database after it exists.
 
@@ -949,6 +957,139 @@ else:
 
 ---
 
+## Stage 6: Evaluation
+
+After approved claims are in the database, evaluation questions can be answered using
+retrieved claims and graded by a human. The evaluation pipeline runs five CLI commands in
+sequence: load questions, run evaluation, grade each result, print a summary, and export.
+
+---
+
+### load-eval-questions (CLI command)
+
+**Module:** `saskan_lore.loader.ingest`
+
+Reads `saskan_lore/data/eval/varkaar_questions.json`, validates it against
+`testing_schema.json`, and inserts `EvalQuestion` records. The command is idempotent:
+re-running it skips questions already present (keyed on `question_id`).
+
+#### Example
+
+```bash
+poetry run saskan-lore load-eval-questions
+# Loaded 10 questions, 0 skipped.
+
+# Second run:
+# Loaded 0 questions, 10 skipped.
+```
+
+---
+
+### evaluate (CLI command)
+
+**Module:** `saskan_lore.loader.ingest`
+
+Retrieves evidence for each active evaluation question and generates a model answer for
+each. Writes one `EvalResult` record per question. `pass_fail` and `failure_type` are
+`None` on all new results — human grading sets them.
+
+The command loads the local GGUF model on startup. Questions with no matching claims
+return `answerable=False` and are written with an empty evidence list.
+
+#### Example
+
+```bash
+poetry run saskan-lore evaluate
+# Evaluating 10 questions...
+#   result_id=1  q_001  (0 evidence claims)
+#   result_id=2  q_002  (0 evidence claims)
+#   result_id=5  q_005  (3 evidence claims)
+# Done: 10 results written.
+```
+
+---
+
+### grade (CLI command)
+
+**Module:** `saskan_lore.loader.ingest`
+
+Sets `pass_fail`, `failure_type`, and an optional note on one `EvalResult` record.
+Run once per result ID after reviewing the model answer.
+
+#### Arguments and options
+
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `RESULT_ID` | yes | — | Integer ID of the `EvalResult` record |
+| `VERDICT` | yes | — | `pass` or `fail` |
+| `--type` | if fail | — | Failure type: `wrong_fact`, `hallucination`, `incomplete`, `style` |
+| `--notes` | no | — | Free-text note about the result |
+
+#### Examples
+
+```bash
+poetry run saskan-lore grade 5 pass
+# Graded result 5: pass
+
+poetry run saskan-lore grade 10 fail --type hallucination --notes "Model said Cann of Byenung"
+# Graded result 10: fail / hallucination
+```
+
+---
+
+### eval-summary (CLI command)
+
+**Module:** `saskan_lore.loader.ingest`
+
+Prints a summary of all graded evaluation results: total questions, pass count, fail
+count, ungraded count, and failures broken down by type.
+
+#### Example
+
+```bash
+poetry run saskan-lore eval-summary
+
+# ── Evaluation summary — Varkaar domain ─────────────────
+#   Total questions : 10
+#   Graded          : 10
+#   Ungraded        : 0
+#   Pass            : 1  (10%)
+#   Fail            : 9
+#
+#   Failures by type:
+#     hallucination   : 1
+#     incomplete      : 8
+```
+
+---
+
+### export-eval (CLI command)
+
+**Module:** `saskan_lore.loader.ingest`
+
+Exports all `EvalResult` records joined to their questions as a JSON file. Default
+output path is `$SASKAN_VAR_DIR/eval_export_<timestamp>.json`. Run this before wiping
+the database at the end of an acceptance run — it is the permanent artifact.
+
+#### Options
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--output` | no | `$SASKAN_VAR_DIR/eval_export_<timestamp>.json` | Output file path |
+
+#### Example
+
+```bash
+poetry run saskan-lore export-eval
+# Exported 10 results to /home/dave/.local/share/saskan-lore/eval_export_20260404_163644.json
+
+# Save permanently before wiping:
+cp /home/dave/.local/share/saskan-lore/eval_export_20260404_163644.json \
+   docs/design/r6_evaluation/
+```
+
+---
+
 ## Database Administration
 
 ### Inspecting the database
@@ -977,14 +1118,14 @@ or to reset test data.
 > **Warning:** This permanently deletes all data in the database. There is no undo.
 
 ```bash
-# 1. Delete the database file
-rm var/saskan_lore.db
+# 1. Delete the database file (path set by setenv.sh — check with: echo $DATABASE_URL)
+rm "$SASKAN_VAR_DIR/saskan_lore.db"
 
 # 2. Recreate the schema by running all Alembic migrations from scratch
 poetry run python -m saskan_lore.infra.db.init_db
 ```
 
-After step 2, `var/saskan_lore.db` exists again with a fresh schema and no rows.
+After step 2, `$SASKAN_VAR_DIR/saskan_lore.db` exists again with a fresh schema and no rows.
 Re-ingest documents with `poetry run saskan-lore ingest ...`.
 
 If you prefer to invoke Alembic directly, use the full venv path (see
@@ -1055,7 +1196,7 @@ count rows, or debug a constraint. The SQLite CLI or a GUI tool works directly o
   SQLite, PostgreSQL, and many others. Useful if you ever migrate to Postgres.
 
 ```bash
-sqlite3 var/saskan_lore.db
+sqlite3 "$SASKAN_VAR_DIR/saskan_lore.db"
 
 # Inside the sqlite3 shell:
 .tables                         -- list all tables

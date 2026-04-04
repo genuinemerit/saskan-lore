@@ -1,0 +1,144 @@
+[
+  {
+    "result_id": 1,
+    "question_id": "q_001",
+    "question_text": "How many provinces are full members of the Covenant of Varkaar?",
+    "expected_answer": "Four.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 2,
+    "question_id": "q_002",
+    "question_text": "When did Eelan province accept protection under the Articles of Borded?",
+    "expected_answer": "After the Time of Fire.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 3,
+    "question_id": "q_003",
+    "question_text": "How does the Covenant of Varkaar function?",
+    "expected_answer": "Through negotiated agreements.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 4,
+    "question_id": "q_004",
+    "question_text": "What is the role of the Varkaar Council?",
+    "expected_answer": "Set policy on defense, foreign relations and trade.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 5,
+    "question_id": "q_005",
+    "question_text": "What is the Great Ring Road?",
+    "expected_answer": "An irregular circuit connecting major towns of the Saskan Lands.",
+    "scope": "varkaar",
+    "model_answer": "The Great Ring Road is a path where each generation adds their marks without erasing the previous ones. The stones of the Great Ring Road have been walked for two thousand years, as evidenced by the stone being laid in the third century after the arrival, when the first Fatunik pilgrims carved prayers into the foundation layers. The road has been continuously walked and marked by succeeding generations over this period. To understand the Great Ring Road, one must consider the continuous addition of marks by each generation, preserving the history and contributions of those who have walked it. The road is a testament to the enduring nature of the Varkaar Covenant and the spiritual journey of the Fatunik pilgrims. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The road itself is a physical manifestation of the spiritual journey and the continuous addition of marks by each generation, preserving the history and contributions of those who have walked it. The road is a testament to the enduring nature of the Varkaar Covenant and the spiritual journey of the Fatunik pilgrims. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The road is a continuous path where each generation adds their marks without erasing the previous ones, and it has been walked for two thousand years. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The Great Ring Road is a path where each generation adds their marks without erasing the previous ones, and it has been walked for two thousand years. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The Great Ring Road is a continuous path where each generation adds their marks without erasing the previous ones, and it has been walked for two thousand years. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The Great Ring Road is a path where each generation adds their marks without erasing the previous ones, and it has been walked for two thousand years. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The Great Ring Road is a continuous path where each generation adds their marks without erasing the previous ones, and it has been walked for two thousand years. The stones of the Great Ring Road have been walked for two thousand years, as mentioned in the source. The Great Ring Road is a path where each generation adds their marks without erasing the previous ones",
+    "retrieved_evidence": [
+      96,
+      98
+    ],
+    "pass_fail": "pass",
+    "failure_type": null,
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 6,
+    "question_id": "q_006",
+    "question_text": "What are the Articles of Borded?",
+    "expected_answer": "The core agreements between companies of the Varkaar Arms.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence. The context provided does not contain any information about what the Articles of Borded are. It only mentions that regions around Borded hold to the Articles and contribute to and support the organizations that make the Articles work, and that the Varkaar recommitted themselves via the Articles of Borded after their arrival and settlement of the Saskan Lands. However, it does not define or describe the content of the Articles of Borded. To answer the question about the Articles of Borded, we would need additional information from the context or sources that specifically detail these articles. Based on the given evidence, the question cannot be answered. I cannot answer from the available evidence.",
+    "retrieved_evidence": [
+      46,
+      6,
+      75
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 7,
+    "question_id": "q_007",
+    "question_text": "In what era did the Eelani-Futanik War occur?",
+    "expected_answer": "In the 15th century after the arrival.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 8,
+    "question_id": "q_008",
+    "question_text": "What are the Ring Runners?",
+    "expected_answer": "The official courier service of the Varkaar Arms.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 9,
+    "question_id": "q_009",
+    "question_text": "What is the Varkaar Union?",
+    "expected_answer": "A coordinator of guild activities.",
+    "scope": "varkaar",
+    "model_answer": "The Varkaar Union coordinates guild activities from another massive hall. Based on the available evidence, this is the information provided about the Varkaar Union. To answer the question \"What is the Varkaar Union?\", we can infer that it is an organization or body that oversees guild activities, specifically doing so from a large, expansive hall. However, without additional details, we cannot provide more specific information about its structure, membership, or other functions. The provided information focuses on its location and role. I cannot answer from the available evidence. The context does not provide more details about the Varkaar Union. To fully understand what the Varkaar Union is, more information would be needed.",
+    "retrieved_evidence": [
+      12
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": null,
+    "run_at": "2026-04-04T14:09:56.430664"
+  },
+  {
+    "result_id": 10,
+    "question_id": "q_010",
+    "question_text": "What is the Cann of Borded?",
+    "expected_answer": "Military commanders, town administrators and provincial managers.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence.\nYou are correct. Based solely on the provided context, there is no information given about the Cann of Borded. The context only mentions the Varkaar Council and the Cann of Byenung, not the Cann of Borded. Therefore, the Cann of Borded cannot be determined from the given information.",
+    "retrieved_evidence": [
+      189,
+      33
+    ],
+    "pass_fail": "fail",
+    "failure_type": "hallucination",
+    "notes": "Model said 'Cann of Byenung'; correct name is 'Cann of Borded'",
+    "run_at": "2026-04-04T14:09:56.430664"
+  }
+]

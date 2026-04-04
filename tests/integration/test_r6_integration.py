@@ -106,7 +106,7 @@ def _mock_inference_complete(prompt: str, **kwargs) -> str:
             "key_events": [],
             "claims": [
                 {
-                    "claim_text": "The Synthetic Covenant governed the test region.",
+                    "statement": "The Synthetic Covenant governed the test region.",
                     "source_span": "The Synthetic Covenant was a governing body",
                     "truth_status": "fact",
                     "confidence": "high",
@@ -291,7 +291,7 @@ class TestPartB:
             answer="A governing body of the test region.",
             evidence=[1],
         )
-        with patch("saskan_lore.analyzer.evaluate.answer", return_value=mock_result):
+        with patch("saskan_lore.analyzer.answering.answer", return_value=mock_result):
             records = run_evaluation(session)
 
         assert len(records) == 2
@@ -305,7 +305,7 @@ class TestPartB:
         load_eval_questions(session, q_file)
 
         mock_result = AnswerResult(answerable=True, answer="A body.", evidence=[])
-        with patch("saskan_lore.analyzer.evaluate.answer", return_value=mock_result):
+        with patch("saskan_lore.analyzer.answering.answer", return_value=mock_result):
             records = run_evaluation(session)
 
         grade_result(session, records[0].id, "pass")
@@ -323,7 +323,7 @@ class TestPartB:
         load_eval_questions(session, q_file)
 
         mock_result = AnswerResult(answerable=True, answer="A body.", evidence=[])
-        with patch("saskan_lore.analyzer.evaluate.answer", return_value=mock_result):
+        with patch("saskan_lore.analyzer.answering.answer", return_value=mock_result):
             records = run_evaluation(session)
 
         grade_result(session, records[0].id, "pass")

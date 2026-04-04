@@ -60,3 +60,19 @@ export LOCAL_MODEL_PATH LLAMA_N_GPU_LAYERS
 echo "Platform: $_SASKAN_PLATFORM  →  model=$(basename "$LOCAL_MODEL_PATH")  gpu_layers=$LLAMA_N_GPU_LAYERS"
 
 unset _SASKAN_PLATFORM _MAC_MODEL _LINUX_MODEL
+
+# ---------------------------------------------------------------------------
+# Runtime data directory — machine-local, outside the Dropbox-synced repo.
+# SASKAN_VAR_DIR may be set in env.local to override. If not set, defaults
+# to $HOME/.local/share/saskan-lore so that each machine has its own
+# isolated DB and staging area. See BL-023.
+# ---------------------------------------------------------------------------
+SASKAN_VAR_DIR="${SASKAN_VAR_DIR:-$HOME/.local/share/saskan-lore}"
+mkdir -p "$SASKAN_VAR_DIR/reviewed" "$SASKAN_VAR_DIR/logs"
+
+DATABASE_URL="sqlite:///${SASKAN_VAR_DIR}/saskan_lore.db"
+REVIEWED_DIR="${SASKAN_VAR_DIR}/reviewed"
+LOG_DIR="${SASKAN_VAR_DIR}/logs"
+
+export SASKAN_VAR_DIR DATABASE_URL REVIEWED_DIR LOG_DIR
+echo "Var dir:  $SASKAN_VAR_DIR"

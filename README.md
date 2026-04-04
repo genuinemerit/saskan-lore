@@ -73,14 +73,14 @@ This is a pilot project. Releases follow a defined dependency chain:
 | R3 | Extraction | Complete |
 | R4 | Review and Load | Complete |
 | R5 | Retrieval | Complete |
-| R6 | Evaluation | Planned |
+| R6 | Evaluation | In Progress |
 
-Current version: v0.4.0
+Current version: v0.6.0 (v0.6.1 patch in progress)
 
-Stages R1 through R5 are complete. The pipeline now covers the full path from PDF source
-texts to natural-language answers grounded in reviewed lore claims. R4 added human review
-and database load. R5 added full-text search (FTS5) retrieval and grounded answering via
-the local model.
+Stages R1 through R6 are code-complete. The full pipeline runs from PDF source texts
+through chunking, LLM extraction, human review, database load, FTS5 retrieval, grounded
+answering, and evaluation. A partial Linux acceptance run (323/1210 chunks) validated all
+pipeline stages end-to-end. Graduation to v1.0.0 is pending the full macOS acceptance run.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and [`docs/design/`](docs/design/) for details.
 

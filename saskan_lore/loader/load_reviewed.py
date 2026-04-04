@@ -73,8 +73,8 @@ def _validate_claim(claim: dict) -> list[str]:
     An empty list means the claim is valid for DB insertion.
     """
     errors = []
-    if not str(claim.get("claim_text") or "").strip():
-        errors.append("missing claim_text")
+    if not str(claim.get("statement") or "").strip():
+        errors.append("missing statement")
     if not str(claim.get("source_span") or "").strip():
         errors.append("missing source_span")
     if claim.get("truth_status") not in _VALID_TRUTH_STATUSES:
@@ -117,7 +117,7 @@ def _load_claims(
         if not is_approved and not is_rejected:
             log.warning(
                 "load_claims: claim review_status is pending — skipped. " "text: %.60r",
-                claim.get("claim_text", ""),
+                claim.get("statement", ""),
             )
             skipped += 1
             continue
@@ -131,7 +131,7 @@ def _load_claims(
             skipped += 1
             continue
 
-        claim_text = claim["claim_text"].strip()
+        claim_text = claim["statement"].strip()
 
         existing = session.query(Claim).filter_by(chunk_id=chunk_id, claim_text=claim_text).first()
         if existing is not None:

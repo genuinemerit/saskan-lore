@@ -1,6 +1,6 @@
 # Release 6: Evaluation
 
-Status: **In Progress**
+Status: **v0.6.0 complete; v0.6.1 patch in progress; graduation pending macOS acceptance run**
 
 ## Objective
 
@@ -309,18 +309,30 @@ before declaring graduation.
 - [x] `tests/integration/conftest.py` — llama_cpp mock
 - [x] `tests/integration/test_r6_integration.py` — 8 tests (Parts A and B)
 
-### Phase 5 — Release v0.6.0
+### Phase 5 — Release v0.6.0 ✓
 
-- [ ] CHANGELOG, commit, push, tag `v0.6.0`
+- [x] CHANGELOG, commit, push, tag `v0.6.0`
 
-### Phase 6 — System acceptance test
+### Phase 6 — System acceptance test (Linux — partial)
 
-- [ ] Follow `system_test.md` against real Varkaar PDFs
-- [ ] Apply `v0.6.x` patches as needed
+- [x] Follow `system_test.md` against real Varkaar PDFs on Dell XPS 13 (Ubuntu/CPU)
+- [x] Applied `v0.6.1` patches for bugs discovered during acceptance run:
+  - BL-021: `DetachedInstanceError` in `ingest`, `extract`, `evaluate`, `grade` commands
+  - BL-023: `var/` moved outside Dropbox repo to `$HOME/.local/share/saskan-lore/`
+  - BL-025: `claim_text` vs `statement` field name mismatch in review and load code
+  - BL-027: FTS5 retrieval returned 0 hits for natural-language questions (stopwords fix)
+  - BL-028: `evaluate` command loaded GGUF model unnecessarily for `grade` command
+- [x] Eval results exported: `docs/design/r6_evaluation/eval_export_20260404_163644.json`
+- [x] DB wiped and reinitialized to pristine state after acceptance run
+- [ ] **macOS acceptance run pending** — blocked on `v0.6.1` patch release (BL-023
+  resolves the Dropbox shared-state problem; each machine now has its own `var/`)
+- [ ] **Graduation not yet declared** — Linux run scored 1/10 (8 `incomplete` due to
+  partial extraction; 1 `hallucination`); not a pipeline failure — 323/1210 chunks
+  extracted; graduation requires full extraction run with 7/10 pass
 
 ### Phase 7 — Graduation and v1.0.0
 
+- [ ] Complete macOS acceptance run (full extraction, all 1210 chunks)
 - [ ] `saskan-lore export-eval` → save outside `var/`
-- [ ] Wipe `var/saskan_lore.db` and `var/reviewed/`
-- [ ] `alembic upgrade head` — reinitialize DB
+- [ ] Wipe and reinitialize DB
 - [ ] CHANGELOG, commit, push, tag `v1.0.0`

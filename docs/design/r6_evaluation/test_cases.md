@@ -56,3 +56,56 @@ required. All DB operations, file I/O, and FTS5 indexing run against real code.
 | TC-R6-INT-B2 | `test_b2_run_evaluation_creates_results` | `run_evaluation()` creates one `EvalResult` per question with `pass_fail=None` and correct `retrieved_evidence` |
 | TC-R6-INT-B3 | `test_b3_grade_and_summary` | `grade_result()` and `eval_summary()` return correct pass/fail/failure counts end-to-end |
 | TC-R6-INT-B4 | `test_b4_export_produces_valid_json` | `export_results()` writes all results joined to questions with correct field values |
+
+---
+
+## System Acceptance Test (Linux — partial run)
+
+**Date:** 2026-04-03 to 2026-04-04
+**Platform:** Dell XPS 13, Ubuntu Linux, Intel i7-1165G7, 16GB RAM, CPU-only inference
+**Model:** Qwen2.5-3B-Instruct-Q4_K_M.gguf, `gpu_layers=0`
+**Reference:** `docs/design/r6_evaluation/system_test.md`
+**Export:** `docs/design/r6_evaluation/eval_export_20260404_163644.json`
+
+### Results summary
+
+| Phase | Result |
+| --- | --- |
+| 1 — DB init | Pass |
+| 2 — Ingest (1210 chunks) | Pass |
+| 3 — Extraction (323/1210 chunks) | Pass — stopped after 12 hours; 0 errors |
+| 4 — Human review (150 files) | Pass — 191 approved claims |
+| 5 — Load | Pass — 191 claims, 205 entities, 179 links loaded |
+| 6a — Load eval questions | Pass — 10 questions, idempotent |
+| 6b — Run evaluation | Pass — 10 results written |
+| 6c — Human grading | Pass — all 10 graded |
+| 6d — Eval summary | 1/10 pass (10%) — below graduation threshold |
+| 7 — Export and reset | Pass — results exported; DB wiped and reinitialized |
+
+### Grading detail
+
+| Question | Result ID | Grade | Failure type | Notes |
+| --- | --- | --- | --- | --- |
+| q_001 — How many provinces are full members? | 1 | fail | incomplete | No matching claims retrieved |
+| q_002 — When did Eelan accept protection? | 2 | fail | incomplete | No matching claims retrieved |
+| q_003 — How does the Covenant function? | 3 | fail | incomplete | No matching claims retrieved |
+| q_004 — What is the role of the Varkaar Council? | 4 | fail | incomplete | No matching claims retrieved |
+| q_005 — What is the Great Ring Road? | 5 | **pass** | — | Correct substance; verbose/repetitive |
+| q_006 — What are the Articles of Borded? | 6 | fail | incomplete | Evidence retrieved but too thin to answer |
+| q_007 — In what era did the Eelani-Futanik War occur? | 7 | fail | incomplete | No matching claims retrieved |
+| q_008 — What are the Ring Runners? | 8 | fail | incomplete | No matching claims retrieved |
+| q_009 — What is the Varkaar Union? | 9 | fail | incomplete | Evidence retrieved; model hedged correctly |
+| q_010 — What is the Cann of Borded? | 10 | fail | hallucination | Model said "Cann of Byenung"; correct name is "Cann of Borded" |
+
+### Bugs found during acceptance run
+
+Seven patch items identified (BL-019, BL-021 through BL-028). All code bugs fixed in
+`v0.6.1` working tree. See `docs/design/backlog.md` for full details.
+
+### Graduation status
+
+**Not yet declared.** 1/10 pass is expected given partial extraction (323/1210 chunks).
+The 8 `incomplete` failures are a data coverage problem, not a pipeline defect. The
+`hallucination` on q_010 is a genuine model quality issue worth tracking on the Mac run.
+
+macOS acceptance test (full extraction, 7B model, Metal GPU) is the next milestone.

@@ -39,7 +39,6 @@ from pathlib import Path
 import typer
 from sqlalchemy.orm import Session
 
-from saskan_lore.analyzer.answering import answer
 from saskan_lore.data.models import EvalQuestion, EvalResult
 
 log = logging.getLogger(__name__)
@@ -78,6 +77,8 @@ def run_evaluation(session: Session) -> list[EvalResult]:
 
     records: list[EvalResult] = []
     run_at = datetime.now(tz=timezone.utc)
+
+    from saskan_lore.analyzer.answering import answer  # noqa: PLC0415
 
     for q in questions:
         result = answer(q.question_text, session)

@@ -53,7 +53,7 @@ def _display_claim(index: int, total: int, claim: dict) -> None:
     typer.echo(f"  truth_status : {claim.get('truth_status', '?')}")
     typer.echo(f"  confidence   : {claim.get('confidence', '—')}")
     typer.echo("")
-    typer.echo(f"  claim_text   : {claim.get('claim_text', '')}")
+    typer.echo(f"  statement    : {claim.get('statement', '')}")
     typer.echo("")
     typer.echo(f"  source_span  : {claim.get('source_span', '')}")
     typer.echo("")

@@ -88,6 +88,7 @@ tests/
     r3_extraction/     unit tests for R3 — extraction, staging utilities
     r4_review_load/    unit tests for R4 — review, load, entity and claim loading
     r5_retrieval/      unit tests for R5 — FTS5 retrieval, context formatting, answering
+    r6_evaluation/     unit tests for R6 — eval questions, run, grade, summary, export
   integration/         cross-release tests: pipeline flows, acceptance criteria
 ```
 

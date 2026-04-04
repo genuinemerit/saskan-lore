@@ -51,7 +51,7 @@ def _make_staging(chunk_id: int, doc_id: int, claims: list[dict]) -> dict:
 
 
 _APPROVED_CLAIM = {
-    "claim_text": "The Covenant of Varkaar governed oath law.",
+    "statement": "The Covenant of Varkaar governed oath law.",
     "source_span": "The Covenant governed the northern provinces.",
     "truth_status": "fact",
     "confidence": "high",
@@ -154,7 +154,7 @@ def test_load_file_approved_claim_inserted(db_session, staging_path):
     claim = db_session.query(Claim).first()
     assert claim is not None
     assert claim.status == "approved"
-    assert claim.claim_text == _APPROVED_CLAIM["claim_text"]
+    assert claim.claim_text == _APPROVED_CLAIM["statement"]
 
 
 # ---------------------------------------------------------------------------
@@ -185,7 +185,7 @@ def test_load_file_unreviewed_claim_skipped(db_session, tmp_path, varkaar_chunk,
 def test_load_file_rejected_claim_inserted(db_session, tmp_path, varkaar_chunk, varkaar_doc):
     """A claim with status='rejected' is inserted with status='rejected'."""
     rejected = {
-        "claim_text": "An invented detail.",
+        "statement": "An invented detail.",
         "source_span": "The Covenant governed the northern provinces.",
         "truth_status": "fact",
         "review_status": "rejected",
@@ -212,7 +212,7 @@ def test_load_file_rejected_claim_inserted(db_session, tmp_path, varkaar_chunk, 
 def test_load_file_invalid_claim_skipped(db_session, tmp_path, varkaar_chunk, varkaar_doc):
     """A claim missing source_span fails validation and is not inserted."""
     invalid = {
-        "claim_text": "The Covenant governed oath law.",
+        "statement": "The Covenant governed oath law.",
         "source_span": "",
         "truth_status": "fact",
         "review_status": "approved",
@@ -284,7 +284,7 @@ def test_load_relationships_unknown_entity_skipped(db_session):
 def test_review_file_approve_writes_review_status_approved(tmp_path):
     """Approve action sets review_status='approved' on the claim and writes back to disk."""
     claim = {
-        "claim_text": "The Covenant governed oath law.",
+        "statement": "The Covenant governed oath law.",
         "source_span": "The Covenant governed the northern provinces.",
         "truth_status": "fact",
         "review_status": "pending",

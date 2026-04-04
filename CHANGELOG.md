@@ -5,6 +5,59 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.6.1] - 2026-04-04 — Acceptance test patch
+
+Patch fixes discovered during the Linux system acceptance run.
+
+### Fixed
+
+- `saskan_lore/loader/ingest.py` — `DetachedInstanceError` in `ingest`, `extract`,
+  `evaluate`, and `grade` commands: ORM attribute access moved inside the session block
+  so attributes are not accessed after the session closes (BL-021)
+- `saskan_lore/analyzer/evaluate.py` — `from saskan_lore.analyzer.answering import answer`
+  moved to a deferred local import inside `run_evaluation()`, so importing `evaluate` no
+  longer triggers the GGUF model load chain; fixes unnecessary model load on `grade` (BL-028)
+- `saskan_lore/analyzer/retrieval.py` — added `_STOPWORDS` frozenset; `tokenize()` now
+  filters common function words before building the FTS5 MATCH expression, resolving 0-hit
+  retrieval on natural-language questions (BL-027)
+- `saskan_lore/loader/review_staging.py` — `claim.get('claim_text')` → `claim.get('statement')`;
+  fixes blank claim display during interactive review (BL-025)
+- `saskan_lore/loader/load_reviewed.py` — `claim["claim_text"]` → `claim["statement"]` in
+  validation, warning log, and extraction; fixes silent skip of all approved claims (BL-025)
+- `tests/unit/r4_review_load/test_r4_review_load.py` — `"claim_text"` → `"statement"` in
+  test fixture dicts (BL-025)
+- `tests/unit/r6_evaluation/test_r6_evaluation.py`,
+  `tests/integration/test_r6_integration.py` — mock patch target updated from
+  `saskan_lore.analyzer.evaluate.answer` to `saskan_lore.analyzer.answering.answer`
+  after the deferred-import refactor (BL-028)
+
+### Added
+
+- `scripts/load_reviewed.sh` — batch-loads all `chunk_*_extraction.json` files from
+  `$REVIEWED_DIR` in one command; reports ok/fail counts per file (BL-024 partial)
+- `scripts/setenv.sh` — `SASKAN_VAR_DIR` now defaults to `$HOME/.local/share/saskan-lore/`;
+  `DATABASE_URL`, `REVIEWED_DIR`, and `LOG_DIR` are derived from it; runtime state is now
+  machine-local and outside the Dropbox-synced repo root (BL-023)
+- `saskan_lore/infra/config/env.example` — updated to document `SASKAN_VAR_DIR`; note that
+  `DATABASE_URL` is set automatically by `setenv.sh` and must not be set manually
+
+### Docs
+
+- `tests/output/acceptance/r6_acceptance_test.txt` — clean consolidated Linux acceptance
+  test record (all 7 phases, bug log, performance data)
+- `docs/design/r6_evaluation/test_cases.md` — Linux acceptance run results added
+  (grading table, graduation status, bugs found)
+- `docs/design/r6_evaluation/design.md` — checklist updated; Linux partial run documented
+  in Phase 6; Phase 7 (macOS + v1.0.0) marked pending
+- `docs/design/backlog.md` — BL-019 through BL-028 added; BL-021, BL-023, BL-025,
+  BL-027, BL-028 marked fixed or resolved
+
+### Tests
+
+- Full suite: 77/77 passing
+
+---
+
 ## [0.6.0] - 2026-04-03 — R6 Evaluation
 
 ### Added
