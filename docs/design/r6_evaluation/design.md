@@ -324,11 +324,26 @@ before declaring graduation.
   - BL-028: `evaluate` command loaded GGUF model unnecessarily for `grade` command
 - [x] Eval results exported: `docs/design/r6_evaluation/eval_export_20260404_163644.json`
 - [x] DB wiped and reinitialized to pristine state after acceptance run
-- [ ] **macOS acceptance run pending** — blocked on `v0.6.1` patch release (BL-023
-  resolves the Dropbox shared-state problem; each machine now has its own `var/`)
-- [ ] **Graduation not yet declared** — Linux run scored 1/10 (8 `incomplete` due to
-  partial extraction; 1 `hallucination`); not a pipeline failure — 323/1210 chunks
-  extracted; graduation requires full extraction run with 7/10 pass
+
+### Phase 6b — System acceptance test (macOS — in progress)
+
+Platform: MacBook (Apple Silicon), Metal GPU, Qwen2.5-7B-Instruct-Q4_K_M.gguf, gpu_layers=-1
+
+- [x] Phase 1 — Environment and DB setup: PASS
+  - venv activated; setenv.sh → Platform: Darwin, model=7B, gpu_layers=-1
+  - DB initialized at `$HOME/.local/share/saskan-lore/saskan_lore.db`; all 4 migrations applied
+  - Applied `v0.6.2` fixes during run:
+    - `tabulate` added as runtime dependency to `pyproject.toml` (missing from Linux transitive deps)
+    - `scripts/row_counts.py` refactored; `scripts/row_rounts.py` deleted (typo duplicate)
+    - `scripts/db_summary.py` added (wraps `dba.summary()`)
+- [x] Phase 2 — Ingest: PASS — 1210 chunks, document id=1; idempotence confirmed
+- [x] Phase 3 — Extraction: PASS — 1206 extracted, 4 errors (0.33%), 0 skipped
+  - Full run: 17:11–19:53 UTC (~2h42m); ~8s/chunk; Metal GPU at 97%
+- [ ] Phase 4 — Human review (in progress)
+- [ ] Phase 5 — Load
+- [ ] Phase 6 — Evaluation
+- [ ] Phase 7 — Export and reset
+- [ ] **Graduation not yet declared**
 
 ### Phase 7 — Graduation and v1.0.0
 

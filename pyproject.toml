@@ -66,12 +66,13 @@ types-pyyaml = "^6.0.12.20250822"
 psutil = "^7.0.0"
 huggingface-hub = "^1.8.0"
 llama-cpp-python = "^0.3.19"
+tabulate = "^0.10.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.3"
 isort = "^5.13"
 ruff = "^0.8"
-pytest = "^8.3"
+pytest = ">=8.3,<10.0"
 coverage = "^7.6"
 mypy = "^1.11"  # optional, but good to have
 pre-commit = "^4.3.0"

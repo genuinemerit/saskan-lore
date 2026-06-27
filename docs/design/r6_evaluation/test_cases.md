@@ -108,4 +108,35 @@ Seven patch items identified (BL-019, BL-021 through BL-028). All code bugs fixe
 The 8 `incomplete` failures are a data coverage problem, not a pipeline defect. The
 `hallucination` on q_010 is a genuine model quality issue worth tracking on the Mac run.
 
-macOS acceptance test (full extraction, 7B model, Metal GPU) is the next milestone.
+---
+
+## System Acceptance Test (macOS — in progress)
+
+**Date:** 2026-04-04
+**Platform:** MacBook, Apple Silicon, Metal GPU, gpu_layers=-1
+**Model:** Qwen2.5-7B-Instruct-Q4_K_M.gguf
+**Reference:** `docs/design/r6_evaluation/system_test.md`
+
+### Results summary
+
+| Phase | Result |
+| --- | --- |
+| 1 — DB init | Pass |
+| 2 — Ingest (1210 chunks) | Pass — matches Linux chunk count exactly |
+| 3 — Extraction (1206/1210 chunks) | Pass — 4 errors (0.33%); full run ~2h42m at ~8s/chunk |
+| 4 — Human review | In progress |
+| 5 — Load | Pending |
+| 6 — Evaluation | Pending |
+| 7 — Export and reset | Pending |
+
+### Fixes applied during macOS run (v0.6.2)
+
+- `tabulate` added as runtime dependency to `pyproject.toml` — was missing; present on Linux
+  only as a transitive dependency
+- `scripts/row_counts.py` — refactored with aligned column output
+- `scripts/row_rounts.py` — deleted (typo duplicate of `row_counts.py`)
+- `scripts/db_summary.py` — new script wrapping `dba.summary()`
+
+### Graduation status
+
+**Pending.** Full extraction complete (1206/1210). Human review and evaluation in progress.
