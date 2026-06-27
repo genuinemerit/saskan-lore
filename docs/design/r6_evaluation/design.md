@@ -1,6 +1,6 @@
 # Release 6: Evaluation
 
-Status: **v0.6.0 complete; v0.6.1 patch in progress; graduation pending macOS acceptance run**
+Status: **Concluded at v0.6.2 — MVP experiment completion. Not graduated to v1.0.0.**
 
 ## Objective
 
@@ -12,8 +12,18 @@ graduation criteria are met. R6 has two distinct tracks running in sequence:
 2. **Acceptance track** — live run of the entire pipeline from ingest to eval-summary
    using real Varkaar PDFs, followed by graduation and system reset.
 
-R6 ends with two tagged releases: `v0.6.0` (code complete) and `v1.0.0` (graduated,
-reset, MVP complete).
+R6 was originally scoped to end with two tagged releases: `v0.6.0` (code complete) and
+`v1.0.0` (graduated, reset, MVP complete). Both the Linux and macOS acceptance runs
+scored 1/10 on eval pass rate — below the 7/10 graduation threshold — for reasons traced
+to review-sampling strategy (BL-030) rather than pipeline defects. Rather than continue
+chasing graduation on the current architecture, the project concludes this experimental
+cycle at **v0.6.2** ("MVP experiment completion"). The pipeline, bugs, and fixes here are
+a complete, validated record — graduation criteria were a useful target throughout, but
+hitting them was not the actual goal. See `docs/design/backlog.md` (BL-030) for analysis.
+Direction for a possible next iteration: more structured lore input (rather than relying
+on LLM extraction from unstructured prose), and reconsidering whether a self-hosted local
+inference engine is the right architecture going forward — both open questions, not
+decided rejections of the current approach.
 
 ---
 
@@ -262,7 +272,8 @@ before declaring graduation.
 - `saskan-lore eval-summary` prints pass rate and failure type breakdown.
 - `saskan-lore export-eval` writes all graded results to JSON.
 - Integration test passes with mocked inference (no GGUF model required).
-- System acceptance test: 7/10 questions pass human grading against real Varkaar data.
+- ~~System acceptance test: 7/10 questions pass human grading against real Varkaar data.~~
+  **Not met on either platform (1/10 both times). Graduation not pursued — see Status.**
 
 ---
 
@@ -271,8 +282,10 @@ before declaring graduation.
 - `v0.6.0` — code complete: all deliverables above committed, unit tests and integration
   test passing. Tagged before the system acceptance run begins.
 - `v0.6.x` — patches applied for defects discovered during acceptance run.
-- `v1.0.0` — graduation: acceptance run complete, 7/10 pass confirmed, eval results
-  exported, `var/` wiped and DB reinitialized, system in pristine state.
+- `v0.6.2` — **actual conclusion of R6**: full macOS acceptance run complete, results
+  exported, system reset to pristine state, tagged "MVP experiment completion."
+- ~~`v1.0.0` — graduation: acceptance run complete, 7/10 pass confirmed~~ — not reached;
+  not pursued further this cycle (deliberate decision, see Status).
 
 ---
 
@@ -325,29 +338,45 @@ before declaring graduation.
 - [x] Eval results exported: `docs/design/r6_evaluation/eval_export_20260404_163644.json`
 - [x] DB wiped and reinitialized to pristine state after acceptance run
 
-### Phase 6b — System acceptance test (macOS — in progress)
+### Phase 6b — System acceptance test (macOS — complete)
 
 Platform: MacBook (Apple Silicon), Metal GPU, Qwen2.5-7B-Instruct-Q4_K_M.gguf, gpu_layers=-1
 
 - [x] Phase 1 — Environment and DB setup: PASS
   - venv activated; setenv.sh → Platform: Darwin, model=7B, gpu_layers=-1
-  - DB initialized at `$HOME/.local/share/saskan-lore/saskan_lore.db`; all 4 migrations applied
+  - DB initialized at `$HOME/.local/share/saskan-lore/saskan_lore.db`; all migrations applied
   - Applied `v0.6.2` fixes during run:
     - `tabulate` added as runtime dependency to `pyproject.toml` (missing from Linux transitive deps)
+    - `nltk` and `pandas` removed (unused; `nltk` had an open high-severity Dependabot alert
+      with no patched version — removed at the source)
     - `scripts/row_counts.py` refactored; `scripts/row_rounts.py` deleted (typo duplicate)
-    - `scripts/db_summary.py` added (wraps `dba.summary()`)
+    - `scripts/db_summary.py`, `scripts/show_eval_results.py` added
+    - Four Dependabot dependency bumps applied directly (cryptography, idna, mako, pytest)
 - [x] Phase 2 — Ingest: PASS — 1210 chunks, document id=1; idempotence confirmed
 - [x] Phase 3 — Extraction: PASS — 1206 extracted, 4 errors (0.33%), 0 skipped
   - Full run: 17:11–19:53 UTC (~2h42m); ~8s/chunk; Metal GPU at 97%
-- [ ] Phase 4 — Human review (in progress)
-- [ ] Phase 5 — Load
-- [ ] Phase 6 — Evaluation
-- [ ] Phase 7 — Export and reset
-- [ ] **Graduation not yet declared**
+- [x] Phase 4 — Human review: PASS — 227 claims reviewed (218 approved, 9 rejected),
+  past the 100–200 target; reviewed in small batches across several sessions
+- [x] Phase 5 — Load: PASS — claims=227, entities=800, claim_entities=260
+  - `scripts/load_reviewed.sh` improved: pre-filters to files with at least one
+    approved/rejected claim before invoking the loader (avoids ~1084 no-op subprocess
+    calls), and quiets routine log noise via `LOG_LEVEL=WARNING` (BL items folded into
+    v0.6.2; see backlog for the entity-loading nuance this filter introduces for any
+    future incremental re-run)
+- [x] Phase 6 — Evaluation: PASS (pipeline functional) — **1/10 pass**, below the 7/10
+  graduation threshold. Two real bugs found and fixed mid-run (BL-031, BL-032 — FTS5
+  stemming and eval-result deduplication); the rest of the shortfall traced to BL-030
+  (review-order topic coverage), not pipeline defects
+- [x] Phase 7 — Export and reset: PASS — results exported to
+  `docs/design/r6_evaluation/eval_export_20260627_204423.json`; DB wiped and
+  reinitialized to pristine state
+- [x] **Graduation to v1.0.0 not pursued — concluded as MVP experiment completion at
+  `v0.6.2`** (deliberate decision, not a failed run — see Status above)
 
-### Phase 7 — Graduation and v1.0.0
+### Phase 7 — Conclusion (v0.6.2, not v1.0.0)
 
-- [ ] Complete macOS acceptance run (full extraction, all 1210 chunks)
-- [ ] `saskan-lore export-eval` → save outside `var/`
-- [ ] Wipe and reinitialize DB
-- [ ] CHANGELOG, commit, push, tag `v1.0.0`
+- [x] Acceptance run complete on both platforms (Linux partial, macOS full)
+- [x] `saskan-lore export-eval` → saved outside `var/` for both runs
+- [x] Wiped and reinitialized DB
+- [x] CHANGELOG, commit, push, tag `v0.6.2` ("MVP experiment completion")
+- [ ] ~~Tag `v1.0.0`~~ — graduation criteria not met; not pursued further this cycle

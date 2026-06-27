@@ -15,7 +15,7 @@ design guidance, testability considerations, and acceptance criteria.
 | [R3](r3_extraction/design.md) | Extraction Pipeline | Complete |
 | [R4](r4_review_load/design.md) | Human Review and Load | Complete |
 | [R5](r5_retrieval/design.md) | Retrieval and Answering | Complete |
-| [R6](r6_evaluation/design.md) | Evaluation | In Progress |
+| [R6](r6_evaluation/design.md) | Evaluation | Concluded at v0.6.2 (MVP experiment completion; not graduated) |
 
 ---
 
@@ -40,4 +40,6 @@ design guidance, testability considerations, and acceptance criteria.
 R0 (done) → R1 → R2 → R3 → R4 → R5 → R6
 ```
 
-Each release depends on the previous. R6 (evaluation) is the current priority.
+Each release depended on the previous. R6 (evaluation) concluded the MVP experiment at
+`v0.6.2` — see `r6_evaluation/design.md` Status for the decision not to pursue v1.0.0
+graduation, and `docs/design/backlog.md` for the direction of a possible next iteration.

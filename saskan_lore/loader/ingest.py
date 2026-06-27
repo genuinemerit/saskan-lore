@@ -25,6 +25,7 @@ called, so `saskan-lore ingest` has no model startup overhead.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 
@@ -594,7 +595,8 @@ def export_eval_cmd(
         None,
         "--output",
         help=(
-            "Destination path for the JSON export. " "Defaults to var/eval_export_<timestamp>.json."
+            "Destination path for the JSON export. "
+            "Defaults to $SASKAN_VAR_DIR/eval_export_<timestamp>.json."
         ),
     ),
 ) -> None:
@@ -614,7 +616,8 @@ def export_eval_cmd(
             dest = Path(output_path)
         else:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            dest = Path("var") / f"eval_export_{ts}.json"
+            var_dir = os.environ.get("SASKAN_VAR_DIR", "var")
+            dest = Path(var_dir) / f"eval_export_{ts}.json"
 
         with get_session() as session:
             written = export_results(session, dest)

@@ -110,12 +110,14 @@ The 8 `incomplete` failures are a data coverage problem, not a pipeline defect. 
 
 ---
 
-## System Acceptance Test (macOS — in progress)
+## System Acceptance Test (macOS — complete)
 
-**Date:** 2026-04-04
+**Date:** 2026-04-04 to 2026-06-27 (extraction on 04-04; review/load/eval resumed 06-27
+after a multi-month gap, in small batches)
 **Platform:** MacBook, Apple Silicon, Metal GPU, gpu_layers=-1
 **Model:** Qwen2.5-7B-Instruct-Q4_K_M.gguf
 **Reference:** `docs/design/r6_evaluation/system_test.md`
+**Export:** `docs/design/r6_evaluation/eval_export_20260627_204423.json`
 
 ### Results summary
 
@@ -124,19 +126,68 @@ The 8 `incomplete` failures are a data coverage problem, not a pipeline defect. 
 | 1 — DB init | Pass |
 | 2 — Ingest (1210 chunks) | Pass — matches Linux chunk count exactly |
 | 3 — Extraction (1206/1210 chunks) | Pass — 4 errors (0.33%); full run ~2h42m at ~8s/chunk |
-| 4 — Human review | In progress |
-| 5 — Load | Pending |
-| 6 — Evaluation | Pending |
-| 7 — Export and reset | Pending |
+| 4 — Human review (227 claims) | Pass — 218 approved, 9 rejected; past the 100–200 target |
+| 5 — Load | Pass — claims=227, entities=800, claim_entities=260 |
+| 6a — Load eval questions | Pass — 10 questions, idempotent |
+| 6b — Run evaluation | Pass — run twice (see Fixes below); final run = 10 results |
+| 6c — Human grading | Pass — all 10 graded |
+| 6d — Eval summary | **1/10 pass (10%)** — below graduation threshold |
+| 7 — Export and reset | Pass — results exported; DB wiped and reinitialized |
+
+### Grading detail (final, post-fix)
+
+| Question | Result ID | Grade | Failure type | Notes |
+| --- | --- | --- | --- | --- |
+| q_001 — How many provinces are full members? | 11 | fail | incomplete | No matching claims retrieved |
+| q_002 — When did Eelan accept protection? | 12 | fail | incomplete | Evidence confirms acceptance but not timing |
+| q_003 — How does the Covenant function? | 13 | **pass** | — | Near-exact match after FTS5 stemming fix |
+| q_004 — What is the role of the Varkaar Council? | 14 | fail | incomplete | No matching claims retrieved |
+| q_005 — What is the Great Ring Road? | 15 | fail | incomplete | Evidence too thin |
+| q_006 — What are the Articles of Borded? | 16 | fail | style | Evidence retrieved; answer loops/repeats (BL-029) |
+| q_007 — In what era did the Eelani-Futanik War occur? | 17 | fail | incomplete | No matching claims retrieved |
+| q_008 — What are the Ring Runners? | 18 | fail | incomplete | No matching claims retrieved |
+| q_009 — What is the Varkaar Union? | 19 | fail | incomplete | Evidence too thin |
+| q_010 — What is the Cann of Borded? | 20 | fail | incomplete | Evidence too thin |
 
 ### Fixes applied during macOS run (v0.6.2)
 
 - `tabulate` added as runtime dependency to `pyproject.toml` — was missing; present on Linux
   only as a transitive dependency
+- `nltk` and `pandas` removed from `pyproject.toml`/`poetry.lock` — both unused in code;
+  `nltk` had an open high-severity Dependabot alert with no patched version available
+- Four Dependabot dependency bumps applied directly: cryptography, idna, mako, pytest
+  (pytest constraint relaxed `^8.3` → `>=8.3,<10.0`)
 - `scripts/row_counts.py` — refactored with aligned column output
 - `scripts/row_rounts.py` — deleted (typo duplicate of `row_counts.py`)
-- `scripts/db_summary.py` — new script wrapping `dba.summary()`
+- `scripts/db_summary.py`, `scripts/show_eval_results.py` — new scripts
+- `scripts/load_reviewed.sh` — pre-filters to files with ≥1 approved/rejected claim before
+  invoking the loader; quiets log noise via `LOG_LEVEL=WARNING`
+- **BL-032**: `claims_fts` FTS5 tokenizer had no stemming, causing exact-token AND matches
+  to fail on simple inflection differences (e.g. "function" vs "functions"). Confirmed two
+  questions (q_002, q_003) had zero evidence purely from this, despite an exact-match
+  approved claim existing for each. Fixed via migration `0e99af659a1b` (porter stemmer);
+  `evaluate()` was re-run after this fix, producing a second, corrected set of results.
+- **BL-031**: `eval_summary()` and `export_results()` counted every `EvalResult` ever
+  written with no "latest per question" filter, so re-running `evaluate()` after the
+  BL-032 fix doubled the apparent question count. Fixed to consider only the latest
+  result per question. `export-eval`'s default output path was also hardcoded to a
+  relative `var/` path that landed inside the Dropbox-synced repo, bypassing the
+  `SASKAN_VAR_DIR` scheme from BL-023 — fixed to read `SASKAN_VAR_DIR`.
+- **BL-029** (found, not fixed): repetitive/looping model output on longer answers
+  (q_006) — `inference.complete()` has no `repeat_penalty` or `stop` sequence override,
+  and uses a raw completion prompt against an instruct-tuned model. Logged for a future
+  iteration.
+- **BL-030** (found, not fixed): sequential review order (chunk_0001 forward, stopping at
+  the claim-count target) systematically under-covers later-document topics relative to
+  the hand-written eval question set. The dominant cause of the low pass rate on both
+  platforms. Logged for a future iteration.
 
 ### Graduation status
 
-**Pending.** Full extraction complete (1206/1210). Human review and evaluation in progress.
+**Not pursued.** 1/10 pass on macOS, same numeric result as the Linux run, despite fixing
+two real retrieval bugs (BL-031, BL-032) along the way. The remaining shortfall is BL-030
+(review-sampling coverage), not a pipeline defect. Rather than chase 7/10 by reviewing
+more of the corpus under the current architecture, the project concludes this
+experimental cycle at `v0.6.2` ("MVP experiment completion") — a deliberate decision, with
+a number of validated lessons to carry into a possible next iteration (see
+`docs/design/r6_evaluation/design.md` Status, and the backlog).

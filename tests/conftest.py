@@ -40,14 +40,15 @@ def db_session():
     Base.metadata.create_all(engine)
 
     # Create the FTS5 virtual table — not an ORM model, so not covered by
-    # create_all(). Mirrors alembic/versions/c2d4a8f3e610_add_claims_fts.py.
+    # create_all(). Mirrors alembic/versions/0e99af659a1b_add_porter_stemmer_to_claims_fts_.py.
     with engine.connect() as conn:
         conn.execute(text("""
                 CREATE VIRTUAL TABLE claims_fts
                 USING fts5(
                     claim_text,
                     content='claims',
-                    content_rowid='id'
+                    content_rowid='id',
+                    tokenize='porter unicode61'
                 )
                 """))
         conn.commit()

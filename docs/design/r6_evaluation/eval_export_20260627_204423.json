@@ -1,0 +1,146 @@
+[
+  {
+    "result_id": 11,
+    "question_id": "q_001",
+    "question_text": "How many provinces are full members of the Covenant of Varkaar?",
+    "expected_answer": "Four.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "no evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 12,
+    "question_id": "q_002",
+    "question_text": "When did Eelan province accept protection under the Articles of Borded?",
+    "expected_answer": "After the Time of Fire.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence. The context provided does not specify when Eelan province accepted protection under the Articles of Borded. It only states that Eelan is not a member of the Covenant of Varkaar but accepts enhanced protection under the Articles of Borded. The timing of this acceptance is not given.",
+    "retrieved_evidence": [
+      66
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "evidence confirms Eelan accepted protection under Articles of Borded but does not state timing (Time of Fire)",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 13,
+    "question_id": "q_003",
+    "question_text": "How does the Covenant of Varkaar function?",
+    "expected_answer": "Through negotiated agreements.",
+    "scope": "varkaar",
+    "model_answer": "The Covenant of Varkaar functions through negotiated agreement. I arrived at this answer directly from the provided context, which explicitly states, \"The Covenant of Varkaar functions through negotiated agreement.\" This statement serves as the factual basis for the answer.",
+    "retrieved_evidence": [
+      87
+    ],
+    "pass_fail": "pass",
+    "failure_type": null,
+    "notes": null,
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 14,
+    "question_id": "q_004",
+    "question_text": "What is the role of the Varkaar Council?",
+    "expected_answer": "Set policy on defense, foreign relations and trade.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "no evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 15,
+    "question_id": "q_005",
+    "question_text": "What is the Great Ring Road?",
+    "expected_answer": "An irregular circuit connecting major towns of the Saskan Lands.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence. The provided context mentions a \"total circuit\" of approximately 3,000 kilometers, but it does not explicitly define or describe what the Great Ring Road is. It only states that this circuit is related to the Great Ring Road, without providing further details about its nature or characteristics. Therefore, based solely on the given information, I cannot definitively state what the Great Ring Road is.",
+    "retrieved_evidence": [
+      158
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "not enough evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 16,
+    "question_id": "q_006",
+    "question_text": "What are the Articles of Borded?",
+    "expected_answer": "The core agreements between companies of the Varkaar Arms.",
+    "scope": "varkaar",
+    "model_answer": "The Articles of Borded were formalized in Borded, and they were a result of representatives from multiple companies meeting in that remote frontier town. Additionally, the Varkaar recommitted themselves via these Articles after the Saskan Lands were divided and settled. The regions that grew up around Borded hold to these Articles to varying degrees and contribute to and support the organizations that make the Articles work. I cannot answer from the available evidence regarding the specific content or details of the Articles of Borded beyond these points. \n\nThe Articles of Borded appear to be a set of agreements or principles that were established in Borded and have since been adhered to by various regions and organizations in the Saskan Lands, particularly by the Varkaar. They seem to be foundational to the Covenant of Varkaar and the functioning of the regions around Borded. \n\nI cannot provide more specific details about the Articles of Borded from the given information. The exact content or full scope of what is covered by the Articles is not detailed in the provided context. \n\nTherefore, based on the evidence provided, the Articles of Borded are a set of formalized agreements or principles that were established in Borded, committed to by the Varkaar, and adhered to by the regions around Borded, with the support of various organizations. The exact details of these Articles are not provided in the given context. \n\nI cannot answer from the available evidence regarding the specific content or details of the Articles of Borded beyond these points. The exact content or full scope of what is covered by the Articles is not detailed in the provided context. \n\nThe Articles of Borded are a set of formalized agreements or principles that were established in Borded, committed to by the Varkaar, and adhered to by the regions around Borded, with the support of various organizations. The exact details of these Articles are not provided in the given context. \n\nI cannot provide more specific details about the Articles of Borded from the given information. The exact content or full scope of what is covered by the Articles is not detailed in the provided context. \n\nThe Articles of Borded are a set of formalized agreements or principles that were established in Borded, committed to by the Varkaar, and adhered to by the regions around Borded, with the support of various organizations. The exact details of these Articles are not provided in the given context. \n\nI cannot provide more specific details about the Articles of Borded from the given information. The exact content or full scope of",
+    "retrieved_evidence": [
+      181,
+      106,
+      5
+    ],
+    "pass_fail": "fail",
+    "failure_type": "style",
+    "notes": "response contains much repetition",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 17,
+    "question_id": "q_007",
+    "question_text": "In what era did the Eelani-Futanik War occur?",
+    "expected_answer": "In the 15th century after the arrival.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "no evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 18,
+    "question_id": "q_008",
+    "question_text": "What are the Ring Runners?",
+    "expected_answer": "The official courier service of the Varkaar Arms.",
+    "scope": "varkaar",
+    "model_answer": "",
+    "retrieved_evidence": [],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "no evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 19,
+    "question_id": "q_009",
+    "question_text": "What is the Varkaar Union?",
+    "expected_answer": "A coordinator of guild activities.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence. The provided context does not give a direct definition or description of what the Varkaar Union is, only that it coordinates guild activities from a hall.",
+    "retrieved_evidence": [
+      16
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "not enough evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  },
+  {
+    "result_id": 20,
+    "question_id": "q_010",
+    "question_text": "What is the Cann of Borded?",
+    "expected_answer": "Military commanders, town administrators and provincial managers.",
+    "scope": "varkaar",
+    "model_answer": "I cannot answer from the available evidence. The context provided does not give any information about what the Cann of Borded is. It only mentions that Liganalupán is subject to the authority of the Varkaar Council and the decisions of the Cann of Borded.",
+    "retrieved_evidence": [
+      49
+    ],
+    "pass_fail": "fail",
+    "failure_type": "incomplete",
+    "notes": "not enough evidence",
+    "run_at": "2026-06-27T18:10:17.346085"
+  }
+]

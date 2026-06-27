@@ -37,6 +37,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import typer
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from saskan_lore.data.models import EvalQuestion, EvalResult
@@ -152,11 +153,33 @@ def grade_result(
     return record
 
 
+def _latest_result_ids(session: Session, question_ids: set[int] | None = None) -> list[int]:
+    """Return the id of the most recent EvalResult per question.
+
+    run_evaluation() may be re-run after a pipeline fix, creating new
+    EvalResult rows while preserving old ones for audit history (see
+    system_test.md). Summary/export views should reflect only the latest
+    attempt per question, not every historical run.
+
+    Args:
+        session:      Active SQLAlchemy session.
+        question_ids: Restrict to these EvalQuestion ids, or None for all.
+
+    Returns:
+        List of EvalResult ids, one per question_id with at least one result.
+    """
+    query = session.query(func.max(EvalResult.id)).group_by(EvalResult.question_id)
+    if question_ids is not None:
+        query = query.filter(EvalResult.question_id.in_(question_ids))
+    return [row[0] for row in query.all()]
+
+
 def eval_summary(session: Session) -> dict:
     """Return pass/fail counts and failure breakdown for graded Varkaar results.
 
-    Only results with pass_fail set (not None) are included. Results linked
-    to inactive questions are excluded.
+    Only the most recent EvalResult per question is considered (see
+    _latest_result_ids). Of those, only results with pass_fail set (not
+    None) are included. Results linked to inactive questions are excluded.
 
     Returns:
         Dict with keys: total, passed, failed, ungraded,
@@ -165,7 +188,8 @@ def eval_summary(session: Session) -> dict:
     questions = session.query(EvalQuestion).filter_by(scope=_SCOPE, is_active=True).all()
     question_ids = {q.id for q in questions}
 
-    all_results = session.query(EvalResult).filter(EvalResult.question_id.in_(question_ids)).all()
+    latest_ids = _latest_result_ids(session, question_ids)
+    all_results = session.query(EvalResult).filter(EvalResult.id.in_(latest_ids)).all()
 
     passed = 0
     failed = 0
@@ -218,7 +242,11 @@ def print_eval_summary(summary: dict) -> None:
 
 
 def export_results(session: Session, output_path: Path) -> Path:
-    """Export all EvalResult records joined to EvalQuestion to JSON.
+    """Export the most recent EvalResult per question, joined to EvalQuestion, to JSON.
+
+    Only the latest result per question is exported (see _latest_result_ids)
+    — older results from a prior run_evaluation() pass are preserved in the
+    DB for audit history but are not part of the exported graduation record.
 
     Args:
         session:     Active SQLAlchemy session.
@@ -228,7 +256,13 @@ def export_results(session: Session, output_path: Path) -> Path:
         The path written.
     """
     questions = {q.id: q for q in session.query(EvalQuestion).all()}
-    results = session.query(EvalResult).order_by(EvalResult.id).all()
+    latest_ids = _latest_result_ids(session)
+    results = (
+        session.query(EvalResult)
+        .filter(EvalResult.id.in_(latest_ids))
+        .order_by(EvalResult.id)
+        .all()
+    )
 
     rows = []
     for r in results:

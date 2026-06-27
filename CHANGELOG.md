@@ -5,6 +5,84 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.6.2] - 2026-06-27 — MVP experiment completion
+
+Concludes the R6 acceptance run on macOS (Apple Silicon, Metal GPU, Qwen2.5-7B-Instruct).
+Full extraction, review, load, and evaluation completed. Final result: **1/10 eval pass**,
+the same numeric result as the earlier Linux partial run, but with the cause now well
+understood: two real retrieval bugs (fixed below) plus a review-sampling coverage gap
+(BL-030, not fixed — see Backlog). This release **does not graduate to v1.0.0** — that
+was a deliberate decision, not a failed attempt. See `docs/design/r6_evaluation/design.md`
+(Status) for the reasoning and the direction being considered for a future iteration.
+
+### Fixed
+
+- `saskan_lore/analyzer/retrieval.py` / `alembic/versions/0e99af659a1b_*.py` — `claims_fts`
+  used the default FTS5 tokenizer (no stemming), so `retrieve()`'s exact-token AND query
+  failed whenever a question word and the indexed claim text differed only by inflection
+  (e.g. "function" vs "functions"). Recreated `claims_fts` with `tokenize='porter
+  unicode61'` and rebuilt the index. Confirmed fix: two eval questions that previously had
+  zero retrieved evidence now retrieve their exact-match approved claim (BL-032).
+- `saskan_lore/analyzer/evaluate.py` — `eval_summary()` and `export_results()` counted
+  every `EvalResult` ever written, with no "latest per question" filter, contradicting the
+  documented re-run workflow ("previous results are preserved"). Re-running `evaluate()`
+  after the FTS5 fix doubled the apparent question count and orphaned prior grades. Added
+  `_latest_result_ids()` and filtered both functions to it (BL-031).
+- `saskan_lore/loader/ingest.py` — `export-eval`'s default output path was hardcoded to a
+  relative `var/eval_export_<timestamp>.json`, landing inside the Dropbox-synced repo root
+  instead of the machine-local `SASKAN_VAR_DIR` established by BL-023. Now reads
+  `SASKAN_VAR_DIR` from the environment (BL-031).
+- `pyproject.toml` / `poetry.lock` — `tabulate` added as a runtime dependency; it is used
+  directly by `dba.py` (`summary()`, `show_rows()`) but was only present on Linux as a
+  transitive dependency, surfacing as `ModuleNotFoundError` on macOS.
+- `tests/conftest.py` — in-memory FTS5 fixture updated to match the porter-stemmer
+  tokenizer change.
+
+### Security
+
+- `pyproject.toml` / `poetry.lock` — four Dependabot alerts resolved by direct upgrade:
+  `cryptography` 46.0.6 → 49.0.0, `idna` 3.11 → 3.18, `mako` 1.3.10 → 1.3.12, `pytest`
+  8.4.2 → 9.1.1 (constraint relaxed `^8.3` → `>=8.3,<10.0`).
+- `nltk` and `pandas` removed from `pyproject.toml`/`poetry.lock` — both declared under the
+  `analytics` extra but never imported anywhere in the codebase. `nltk` had an open
+  high-severity alert with no patched version available; removed at the source rather
+  than dismissed. Re-add when BL-011/BL-012 (terminology consistency / entity frequency
+  analysis) are actually designed and implemented.
+- All GitHub Dependabot alerts resolved; repo confirmed at 0 open alerts.
+- Fixed `git remote` for `origin`, which used a plain `git@github.com:...` URL that didn't
+  match the `github.com-main` SSH config alias — unrelated to the app, but was blocking
+  push/fetch on this machine.
+
+### Added
+
+- `scripts/db_summary.py` — wraps `dba.summary()`.
+- `scripts/show_eval_results.py` — prints the latest eval result per question alongside
+  its expected answer and evidence, for grading.
+- `scripts/row_counts.py` — refactored to print aligned row counts; `scripts/row_rounts.py`
+  (typo duplicate) removed.
+- `scripts/load_reviewed.sh` — pre-filters to staging files with at least one
+  approved/rejected claim before invoking the loader (avoided ~1084 no-op subprocess
+  calls on this run); quiets routine log noise via `LOG_LEVEL=WARNING`.
+
+### Docs
+
+- `docs/design/r6_evaluation/design.md`, `test_cases.md` — full macOS acceptance run
+  recorded (all 7 phases); Status updated to reflect the decision to conclude at `v0.6.2`
+  rather than pursue `v1.0.0` graduation.
+- `docs/design/backlog.md` — BL-029 through BL-032 added (BL-031, BL-032 resolved this
+  release; BL-029 repetition/looping model output and BL-030 review-sampling coverage gap
+  logged for a future iteration).
+- `docs/design/design_000_index.md` — R6 status updated to reflect conclusion.
+- `tests/output/acceptance/r6_macos_acceptance_screenshot_and_notes.txt` — full macOS run
+  log.
+- `docs/design/r6_evaluation/eval_export_20260627_204423.json` — final macOS eval export.
+
+### Tests
+
+- Full suite: 77/77 passing.
+
+---
+
 ## [0.6.1] - 2026-04-04 — Acceptance test patch
 
 Patch fixes discovered during the Linux system acceptance run.
