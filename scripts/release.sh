@@ -84,7 +84,11 @@ echo "Version: $CURRENT -> $NEW"
 # Update pyproject.toml
 # --------------------------------------------------------------------------
 NEW_BARE="${NEW#v}"   # strip leading 'v' for pyproject.toml
-sed -i "s/^version = \".*\"/version = \"${NEW_BARE}\"/" pyproject.toml
+# -i.bak + rm is portable across BSD sed (macOS) and GNU sed (Linux); plain
+# `sed -i "s/.../"` works on Linux but fails on macOS, which requires an
+# explicit (possibly empty) backup-suffix argument after -i.
+sed -i.bak "s/^version = \".*\"/version = \"${NEW_BARE}\"/" pyproject.toml
+rm -f pyproject.toml.bak
 
 echo "Updated pyproject.toml to version $NEW_BARE."
 
