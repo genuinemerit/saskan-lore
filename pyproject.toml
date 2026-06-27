@@ -51,10 +51,6 @@ rich = "^13.7"
 alembic = "^1.13"
 SQLAlchemy = "^2.0"
 
-# Heavy/optional at runtime → kept as extras
-nltk = { version = "^3.9", optional = true }
-pandas = { version = "^2.2", optional = true }
-
 # Databases
 # Default: stdlib sqlite3 via SQLAlchemy (no extra driver needed)
 # Optional Postgres support (sync)
@@ -79,7 +75,6 @@ pre-commit = "^4.3.0"
 import-linter = "^2.4"
 
 [tool.poetry.extras]
-analytics = ["pandas", "nltk"]
 gui = ["pygame"]
 postgres = ["psycopg"]
 
